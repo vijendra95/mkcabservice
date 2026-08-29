@@ -1,0 +1,13 @@
+Options -Indexes
+DirectoryIndex index.php index.html
+
+RewriteEngine On
+
+# 301: old route.php?slug=xxx-taxi links → clean one-way URLs
+RewriteCond %{THE_REQUEST} \s/route\.php\?slug=([a-z0-9-]+?)(-one-way)?-taxi[\s&] [NC]
+RewriteRule ^route\.php$ /%1-one-way-taxi? [R=301,L]
+
+# Clean one-way taxi URLs → route.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z0-9-]+-one-way-taxi)/?$ route.php?slug=$1 [L,QSA]

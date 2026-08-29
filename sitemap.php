@@ -1,0 +1,17 @@
+<?php
+require_once __DIR__ . '/includes/config.php';
+header('Content-Type: application/xml; charset=UTF-8');
+$base = 'https://mkcabservice.com';
+$urls = ['/', '/outstation-cabs.php', '/airport-taxi.php', '/local-car-rental.php', '/tour-packages.php', '/fleet.php', '/blog.php', '/about.php', '/contact.php'];
+foreach ($ROUTES as $slug => $r) {
+    $urls[] = route_url($slug);
+}
+foreach (['jaipur-to-delhi-taxi-guide', 'best-places-to-visit-rajasthan-by-car', 'outstation-cab-booking-tips'] as $post) {
+    $urls[] = '/blog-post.php?slug=' . $post;
+}
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+echo "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
+foreach ($urls as $u) {
+    echo '  <url><loc>' . htmlspecialchars($base . $u) . "</loc></url>\n";
+}
+echo "</urlset>\n";
