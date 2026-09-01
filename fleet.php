@@ -7,8 +7,8 @@ include __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
   <div class="container">
-    <h1>Our Fleet &amp; Pricing</h1>
-    <p>Every car is cleaned before your trip, serviced on schedule and comes with an experienced, verified driver.</p>
+    <h1><?= page_field('fleet', 'hero_title') ?></h1>
+    <p><?= page_field('fleet', 'hero_sub') ?></p>
   </div>
 </section>
 
@@ -23,7 +23,7 @@ include __DIR__ . '/includes/header.php';
         <p>Dzire, Etios, Aura</p>
         <p style="margin-top:6px">AC, music system, comfortable seating</p>
         <ul><li>4 seats</li><li>3 bags</li><li>AC</li></ul>
-        <div class="fleet-card__rate">From <b>₹11/km</b></div>
+        <div class="fleet-card__rate">From <b>₹<?= RATE_SEDAN ?>/km</b></div>
       </div>
             <div class="card fleet-card">
         <div class="fleet-card__img">
@@ -33,7 +33,7 @@ include __DIR__ . '/includes/header.php';
         <p>Ertiga, Marazzo</p>
         <p style="margin-top:6px">AC, spacious, ideal for families</p>
         <ul><li>6-7 seats</li><li>4 bags</li><li>AC</li></ul>
-        <div class="fleet-card__rate">From <b>₹15/km</b></div>
+        <div class="fleet-card__rate">From <b>₹<?= RATE_SUV ?>/km</b></div>
       </div>
             <div class="card fleet-card">
         <div class="fleet-card__img">
@@ -43,7 +43,7 @@ include __DIR__ . '/includes/header.php';
         <p>Innova Crysta</p>
         <p style="margin-top:6px">Premium comfort, captain seats</p>
         <ul><li>6-7 seats</li><li>5 bags</li><li>AC</li></ul>
-        <div class="fleet-card__rate">From <b>₹19/km</b></div>
+        <div class="fleet-card__rate">From <b>₹<?= RATE_INNOVA ?>/km</b></div>
       </div>
             <div class="card fleet-card">
         <div class="fleet-card__img">
@@ -53,18 +53,12 @@ include __DIR__ . '/includes/header.php';
         <p>12-17 seater</p>
         <p style="margin-top:6px">Group travel, push-back seats</p>
         <ul><li>12-17 seats</li><li>15+ bags</li><li>AC</li></ul>
-        <div class="fleet-card__rate">From <b>₹35/km</b></div>
+        <div class="fleet-card__rate">From <b>₹<?= RATE_TEMPO ?>/km</b></div>
       </div>
           </div>
 
     <div class="content-block" style="margin-top:44px">
-      <h2>What the rate includes</h2>
-      <ul>
-        <li>AC car with fuel and an experienced driver</li>
-        <li>Driver allowance shown separately in your quote — no hidden markups</li>
-        <li>Only parking billed extra</li>
-      </ul>
-      <p>WhatsApp <a style="color:var(--orange-600);font-weight:700" href="https://wa.me/919116171336?text=Hello%20MK%20Cab%20Service%2C%20I%27d%20like%20to%20book%20a%20cab." target="_blank" rel="noopener">+91 91161 71336</a> for an exact quote for your trip — we confirm fares before you book, and the price never changes after.</p>
+<?= page_field('fleet', 'body') ?>
     </div>
 
     <div class="section-head" style="margin-top:40px">
@@ -85,7 +79,7 @@ include __DIR__ . '/includes/header.php';
     <h2>Not sure which car fits your plan?</h2>
     <p>Tell us your route, dates and group size on WhatsApp — we'll recommend the best car and share an exact fare in minutes.</p>
     <div class="hero__actions">
-      <a class="btn btn--green btn--lg" href="https://wa.me/919116171336?text=Hello%20MK%20Cab%20Service%2C%20I%27d%20like%20to%20book%20a%20cab." target="_blank" rel="noopener">💬 WhatsApp +91 91161 71336</a>
+      <a class="btn btn--green btn--lg" href="<?= wa_link() ?>" target="_blank" rel="noopener">💬 WhatsApp <?= PHONE_DISPLAY ?></a>
     </div>
   </div>
 </section>

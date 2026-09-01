@@ -19,8 +19,8 @@ include __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
   <div class="container">
-    <h1>Contact Us</h1>
-    <p>WhatsApp us or drop a message — we reply within minutes, 24x7.</p>
+    <h1><?= page_field('contact', 'hero_title') ?></h1>
+    <p><?= page_field('contact', 'hero_sub') ?></p>
   </div>
 </section>
 
@@ -28,15 +28,9 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="hero__grid" style="align-items:start">
       <div class="content-block">
-        <h2>Reach us directly</h2>
-        <p><b>WhatsApp:</b> <a style="color:var(--orange-600);font-weight:700" href="https://wa.me/919116171336?text=Hello%20MK%20Cab%20Service%2C%20I%27d%20like%20to%20book%20a%20cab." target="_blank" rel="noopener">+91 91161 71336</a><br>
-        <b>Email:</b> <a style="color:var(--orange-600);font-weight:700" href="mailto:info@mkcabservice.com">info@mkcabservice.com</a></p>
-        <h2>Office address</h2>
-        <p>53, Rd Number 1, Malhotra Nagar, VKI, Jaipur, Rajasthan 302039</p>
-        <h2>Working hours</h2>
-        <p>24 hours a day, 7 days a week — including holidays. Late-night airport pickups and early-morning departures are never a problem.</p>
+<?= page_field('contact', 'body') ?>
         <div class="hero__actions">
-          <a class="btn btn--primary btn--lg" href="https://wa.me/919116171336?text=Hello%20MK%20Cab%20Service%2C%20I%27d%20like%20to%20book%20a%20cab." target="_blank" rel="noopener">💬 Chat on WhatsApp</a>
+          <a class="btn btn--primary btn--lg" href="<?= wa_link() ?>" target="_blank" rel="noopener">💬 Chat on WhatsApp</a>
         </div>
       </div>
 

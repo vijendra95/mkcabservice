@@ -11,8 +11,8 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="hero__grid">
       <div>
-        <h1>Safe, reliable &amp; <span class="hl">on-time</span> cabs in Jaipur — book in minutes</h1>
-        <p class="lead">Well-kept cars, honest fares and courteous, verified drivers. Outstation trips, airport transfers, local rentals and Rajasthan tours — available round the clock.</p>
+        <h1><?= page_field('home', 'hero_title') ?></h1>
+        <p class="lead"><?= page_field('home', 'hero_sub') ?></p>
         <ul class="hero__usps">
           <li><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Transparent pricing, no surprises</li>
           <li><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Police-verified drivers</li>

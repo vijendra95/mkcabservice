@@ -1,19 +1,39 @@
 <?php
 // Site-wide configuration and route data for MK Cab Service.
 
-const SITE_NAME  = 'MK Cab Service';
-const PHONE_DISPLAY = '+91 91161 71336';
-const WHATSAPP_NUMBER = '919116171336';
-const EMAIL = 'info@mkcabservice.com';
-const ADDRESS = '53, Rd Number 1, Malhotra Nagar, VKI, Jaipur, Rajasthan 302039';
+// Default settings; overridden by data/settings.json (edited from /admin).
+$SETTINGS = [
+    'site_name' => 'MK Cab Service',
+    'phone_display' => '+91 91161 71336',
+    'whatsapp_number' => '919116171336',
+    'email' => 'info@mkcabservice.com',
+    'address' => '53, Rd Number 1, Malhotra Nagar, VKI, Jaipur, Rajasthan 302039',
+    'rate_sedan' => 11,
+    'rate_suv' => 15,
+    'rate_innova' => 19,
+    'rate_tempo' => 35,
+    'allowance_default' => 300,   // driver allowance for Sedan / SUV / Innova
+    'allowance_tempo' => 500,     // driver allowance for Tempo Traveller
+];
+$__settings_file = __DIR__ . '/../data/settings.json';
+if (is_file($__settings_file)) {
+    $__saved_settings = json_decode((string)file_get_contents($__settings_file), true);
+    if (is_array($__saved_settings)) {
+        $SETTINGS = array_merge($SETTINGS, $__saved_settings);
+    }
+}
 
-// Per-km rates used by the fare estimator.
-const RATE_SEDAN = 11;
-const RATE_SUV = 15;
-const RATE_INNOVA = 19;
-const RATE_TEMPO = 35;
-const ALLOWANCE_DEFAULT = 300;      // driver allowance for Sedan / SUV / Innova
-const ALLOWANCE_TEMPO = 500;        // driver allowance for Tempo Traveller
+define('SITE_NAME', $SETTINGS['site_name']);
+define('PHONE_DISPLAY', $SETTINGS['phone_display']);
+define('WHATSAPP_NUMBER', $SETTINGS['whatsapp_number']);
+define('EMAIL', $SETTINGS['email']);
+define('ADDRESS', $SETTINGS['address']);
+define('RATE_SEDAN', (int)$SETTINGS['rate_sedan']);
+define('RATE_SUV', (int)$SETTINGS['rate_suv']);
+define('RATE_INNOVA', (int)$SETTINGS['rate_innova']);
+define('RATE_TEMPO', (int)$SETTINGS['rate_tempo']);
+define('ALLOWANCE_DEFAULT', (int)$SETTINGS['allowance_default']);
+define('ALLOWANCE_TEMPO', (int)$SETTINGS['allowance_tempo']);
 
 function wa_link(string $text = "Hello MK Cab Service, I'd like to book a cab."): string {
     return 'https://wa.me/' . WHATSAPP_NUMBER . '?text=' . rawurlencode($text);
@@ -118,4 +138,56 @@ function route_url(string $slug): string {
 
 function route_title(array $r): string {
     return $r['from'] . ' to ' . $r['to'];
+}
+
+// ---------------------------------------------------------------------------
+// Editable page content (WordPress-style, via /admin).
+// Defaults live in includes/page-defaults.php; admin edits are stored in
+// data/pages/<page>.json and override the defaults field by field.
+// ---------------------------------------------------------------------------
+$PAGE_DEFAULTS = require __DIR__ . '/page-defaults.php';
+
+function render_tokens(string $html): string {
+    return strtr($html, [
+        '{{PHONE}}' => PHONE_DISPLAY,
+        '{{EMAIL}}' => EMAIL,
+        '{{ADDRESS}}' => ADDRESS,
+        '{{WHATSAPP_LINK}}' => wa_link(),
+        '{{SITE_NAME}}' => SITE_NAME,
+    ]);
+}
+
+function page_raw_field(string $page, string $key): string {
+    global $PAGE_DEFAULTS;
+    static $cache = [];
+    if (!isset($cache[$page])) {
+        $file = __DIR__ . '/../data/pages/' . $page . '.json';
+        $cache[$page] = is_file($file) ? (json_decode((string)file_get_contents($file), true) ?: []) : [];
+    }
+    $val = $cache[$page][$key] ?? null;
+    if ($val === null || $val === '') {
+        $val = $PAGE_DEFAULTS[$page]['fields'][$key] ?? '';
+    }
+    return (string)$val;
+}
+
+function page_field(string $page, string $key): string {
+    return render_tokens(page_raw_field($page, $key));
+}
+
+// ---------------------------------------------------------------------------
+// Blog posts. Index in data/posts.json, bodies in data/posts/<slug>.html.
+// ---------------------------------------------------------------------------
+function blog_posts(): array {
+    static $posts = null;
+    if ($posts === null) {
+        $file = __DIR__ . '/../data/posts.json';
+        $posts = is_file($file) ? (json_decode((string)file_get_contents($file), true) ?: []) : [];
+    }
+    return $posts;
+}
+
+function blog_post_body(string $slug): string {
+    $file = __DIR__ . '/../data/posts/' . basename($slug) . '.html';
+    return is_file($file) ? render_tokens((string)file_get_contents($file)) : '';
 }

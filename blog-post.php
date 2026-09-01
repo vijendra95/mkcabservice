@@ -1,14 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
 
-$POSTS = [
-    'jaipur-to-delhi-taxi-guide' => ['title' => 'Jaipur to Delhi Taxi Guide | Fares, Route & Travel Tips | MK Cab Service', 'desc' => 'Planning a Jaipur to Delhi cab? Distance, travel time, per-km fares, best stops on NH48 and booking tips — everything you need before your trip.'],
-    'best-places-to-visit-rajasthan-by-car' => ['title' => 'Best Rajasthan Road Trips from Jaipur | Taxi Routes & Distances | MK Cab Service', 'desc' => 'Udaipur, Jodhpur, Jaisalmer, Ranthambore and more — the best Rajasthan destinations you can reach by cab from Jaipur, with distances and travel times.'],
-    'outstation-cab-booking-tips' => ['title' => '7 Tips for Booking Outstation Cabs from Jaipur | MK Cab Service', 'desc' => 'Save money and travel safer — 7 practical tips for booking an outstation taxi from Jaipur, from choosing the right car to understanding per-km fares.'],
-];
-
 $slug = $_GET['slug'] ?? '';
-if (!isset($POSTS[$slug])) {
+$post = null;
+foreach (blog_posts() as $p) {
+    if ($p['slug'] === $slug) { $post = $p; break; }
+}
+
+if (!$post || blog_post_body($slug) === '') {
     http_response_code(404);
     $page_title = 'Post not found | MK Cab Service';
     include __DIR__ . '/includes/header.php';
@@ -17,9 +16,34 @@ if (!isset($POSTS[$slug])) {
     exit;
 }
 
-$page_title = $POSTS[$slug]['title'];
-$page_desc = $POSTS[$slug]['desc'];
+$page_title = ($post['seo_title'] ?? '') !== '' ? $post['seo_title'] : $post['title'] . ' | ' . SITE_NAME;
+$page_desc = ($post['seo_desc'] ?? '') !== '' ? $post['seo_desc'] : ($post['excerpt'] ?? '');
 $canonical = '/blog-post.php?slug=' . $slug;
 include __DIR__ . '/includes/header.php';
-readfile(__DIR__ . '/data/posts/' . $slug . '.html');
-include __DIR__ . '/includes/footer.php';
+?>
+<section class="page-hero">
+  <div class="container">
+    <h1><?= htmlspecialchars($post['title']) ?></h1>
+    <p><?= htmlspecialchars($post['date']) ?> · <?= SITE_NAME ?></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" style="max-width:820px">
+    <div class="content-block blog-content">
+<?= blog_post_body($slug) ?>
+    </div>
+    <p style="margin-top:30px"><a style="color:var(--orange-600);font-weight:700" href="/blog.php">← Back to all posts</a></p>
+  </div>
+</section>
+
+<section class="section section--green">
+  <div class="container cta-band">
+    <h2>Ready to book your cab?</h2>
+    <p>Message us your route and dates on WhatsApp — we confirm your car and fare within minutes, 24x7.</p>
+    <div class="hero__actions">
+      <a class="btn btn--green btn--lg" href="<?= wa_link() ?>" target="_blank" rel="noopener">💬 WhatsApp <?= PHONE_DISPLAY ?></a>
+    </div>
+  </div>
+</section>
+<?php include __DIR__ . '/includes/footer.php'; ?>

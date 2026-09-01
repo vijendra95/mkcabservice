@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
-$page_title = $page_title ?? 'MK Cab Service | Taxi & Cab Booking in Jaipur | +91 91161 71336';
-$page_desc = $page_desc ?? 'Book reliable cabs in Jaipur with MK Cab Service. Outstation taxis, airport transfers, local rentals and Rajasthan tours — 24x7. WhatsApp +91 91161 71336.';
+$page_title = $page_title ?? SITE_NAME . ' | Taxi & Cab Booking in Jaipur | ' . PHONE_DISPLAY;
+$page_desc = $page_desc ?? 'Book reliable cabs in Jaipur with ' . SITE_NAME . '. Outstation taxis, airport transfers, local rentals and Rajasthan tours — 24x7. WhatsApp ' . PHONE_DISPLAY . '.';
 $canonical = $canonical ?? null;
 ?><!DOCTYPE html>
 <html lang="en-IN">

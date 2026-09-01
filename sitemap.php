@@ -6,8 +6,8 @@ $urls = ['/', '/outstation-cabs.php', '/airport-taxi.php', '/local-car-rental.ph
 foreach ($ROUTES as $slug => $r) {
     $urls[] = route_url($slug);
 }
-foreach (['jaipur-to-delhi-taxi-guide', 'best-places-to-visit-rajasthan-by-car', 'outstation-cab-booking-tips'] as $post) {
-    $urls[] = '/blog-post.php?slug=' . $post;
+foreach (blog_posts() as $post) {
+    $urls[] = '/blog-post.php?slug=' . $post['slug'];
 }
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 echo "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
