@@ -85,8 +85,8 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">Why choose MK Cab Service</span>
-      <h2>Safe, reliable &amp; genuinely comfortable</h2>
-      <p class="lead">The promises we keep on every single trip — for your peace of mind, comfort and budget.</p>
+      <h2><?= page_field('home', 'why_title') ?></h2>
+      <p class="lead"><?= page_field('home', 'why_sub') ?></p>
     </div>
     <div class="why">
       <div class="why__item">
@@ -118,7 +118,7 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">Our services</span>
-      <h2>One trusted cab partner for every journey</h2>
+      <h2><?= page_field('home', 'services_title') ?></h2>
     </div>
     <div class="grid grid-4">
       <a class="card service-card" href="/outstation-cabs.php">
@@ -154,8 +154,8 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">One way taxi routes</span>
-      <h2>Top Jaipur taxi routes at transparent fares</h2>
-      <p class="lead">Fixed prices for the trips our riders book most — only parking extra. Tap any route for details.</p>
+      <h2><?= page_field('home', 'routes_title') ?></h2>
+      <p class="lead"><?= page_field('home', 'routes_sub') ?></p>
     </div>
     <div class="grid grid-3">
 <?php foreach ($ROUTES as $slug => $r): ?>
@@ -175,8 +175,8 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">Jaipur Transport Rate Table</span>
-      <h2>One-way taxi fares at a glance</h2>
-      <p class="lead">Fixed one-way fares for every route — only parking extra.</p>
+      <h2><?= page_field('home', 'ratetable_title') ?></h2>
+      <p class="lead"><?= page_field('home', 'ratetable_sub') ?></p>
     </div>
     <table class="info-table">
       <thead><tr><th>Route</th><th>Sedan</th><th>SUV</th><th>Innova Crysta</th><th>Tempo Traveller</th></tr></thead>
@@ -201,8 +201,8 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">Instant fare estimator</span>
-      <h2>Estimate your cab fare in seconds</h2>
-      <p class="lead">Pick a route or enter the distance and car type for a clear estimate — then book it on WhatsApp.</p>
+      <h2><?= page_field('home', 'estimator_title') ?></h2>
+      <p class="lead"><?= page_field('home', 'estimator_sub') ?></p>
     </div>
     <div class="booking" style="max-width:780px;margin-inline:auto">
       <div class="field-row">
@@ -254,7 +254,7 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">Booking in 4 simple steps</span>
-      <h2>Booking a cab has never been this easy</h2>
+      <h2><?= page_field('home', 'steps_title') ?></h2>
     </div>
     <div class="steps">
       <div class="step"><div class="step__num"></div><h3>Tell us your trip</h3><p>Share pickup, drop, date &amp; time via the form or WhatsApp.</p></div>
@@ -282,8 +282,8 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">Our fleet</span>
-      <h2>Choose the right cab for your journey</h2>
-      <p class="lead">From economical sedans to spacious tempo travellers — all clean, AC and driver-included.</p>
+      <h2><?= page_field('home', 'fleet_title') ?></h2>
+      <p class="lead"><?= page_field('home', 'fleet_sub') ?></p>
     </div>
     <div class="grid grid-4">
       <div class="card fleet-card">
@@ -332,7 +332,7 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">Rider reviews</span>
-      <h2>Trusted by travellers across Rajasthan</h2>
+      <h2><?= page_field('home', 'reviews_title') ?></h2>
     </div>
     <div class="grid grid-3">
       <figure class="testimonial">
@@ -359,7 +359,7 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="section-head center">
       <span class="eyebrow">FAQs</span>
-      <h2>MK Cab Service — your questions answered</h2>
+      <h2><?= page_field('home', 'faq_title') ?></h2>
     </div>
     <div class="faq">
       <details open><summary>How do I book a cab with MK Cab Service?</summary><p>WhatsApp us on <?= PHONE_DISPLAY ?>, or fill the booking form on this page. We confirm your booking within minutes, any time of day.</p></details>
@@ -375,8 +375,8 @@ include __DIR__ . '/includes/header.php';
 <!-- CTA BAND -->
 <section class="section section--green">
   <div class="container cta-band">
-    <h2>Ready to ride? Your cab is a tap away</h2>
-    <p>Book in under a minute. Honest fares, clean cars, courteous drivers — 24x7 across Jaipur and all of Rajasthan.</p>
+    <h2><?= page_field('home', 'cta_title') ?></h2>
+    <p><?= page_field('home', 'cta_sub') ?></p>
     <div class="hero__actions">
       <a class="btn btn--green btn--lg" href="<?= wa_link() ?>" target="_blank" rel="noopener">💬 WhatsApp <?= PHONE_DISPLAY ?></a>
       <a class="btn btn--white btn--lg" href="<?= wa_link() ?>" target="_blank" rel="noopener">Book on WhatsApp</a>

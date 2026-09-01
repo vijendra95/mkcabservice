@@ -222,75 +222,142 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
 <script src="https://cdn.jsdelivr.net/npm/jodit@4.2.27/es2021/jodit.fat.min.js"></script>
 <?php endif; ?>
 <style>
+  :root { --orange: #e8590c; --orange-dark: #c74b0a; --navy: #141c3d; --navy-2: #1d2750; --ink: #1c2434; --ink-soft: #5b6472; --line: #e7ebf1; --bg: #f5f6fa; }
   * { box-sizing: border-box; margin: 0; }
-  body { font-family: system-ui, -apple-system, sans-serif; background: #f2f4f7; color: #1c2434; }
-  .wrap { max-width: 1150px; margin: 0 auto; padding: 24px 16px 60px; }
-  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
-  h1 { font-size: 1.35rem; }
-  h2 { font-size: 1.05rem; margin-bottom: 12px; }
-  .tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
-  .tabs a { padding: 9px 18px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 0.88rem; color: #3c4657; background: #e7ebf0; }
-  .tabs a.on { background: #e8590c; color: #fff; }
-  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(16,24,40,.08); margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #eceef2; }
-  th { background: #f8fafc; font-size: 0.78rem; text-transform: uppercase; letter-spacing: .04em; color: #5b6472; white-space: nowrap; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  label { display: block; font-size: 0.78rem; font-weight: 600; color: #5b6472; margin-bottom: 4px; }
-  input, textarea { width: 100%; padding: 9px 10px; border: 1px solid #d4d9e0; border-radius: 8px; font-size: 0.92rem; font-family: inherit; }
-  .btn { display: inline-block; padding: 9px 18px; border: 0; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; text-decoration: none; }
-  .btn--primary { background: #e8590c; color: #fff; }
-  .btn--ghost { background: #eef1f5; color: #1c2434; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+  h2 { font-size: 1.02rem; margin-bottom: 14px; letter-spacing: -0.01em; }
+
+  /* ---- Login ---- */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(150deg, var(--navy) 0%, #2a3566 100%); }
+  .login { background: #fff; border-radius: 16px; padding: 34px 30px; width: 100%; max-width: 400px; box-shadow: 0 24px 60px rgba(10,15,40,.45); }
+  .login h1 { font-size: 1.25rem; margin-bottom: 4px; }
+  .login .sub { color: var(--ink-soft); font-size: 0.86rem; margin-bottom: 20px; }
+  .login-badge { width: 46px; height: 46px; border-radius: 12px; background: var(--orange); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem; margin-bottom: 16px; }
+
+  /* ---- Layout ---- */
+  .layout { display: flex; min-height: 100vh; }
+  .side { width: 232px; flex-shrink: 0; background: var(--navy); color: #cdd4ee; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+  .brand { padding: 20px 18px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .brand b { color: #fff; font-size: 1.02rem; display: block; letter-spacing: -0.01em; }
+  .brand span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .12em; color: #8d97c4; }
+  .nav { padding: 14px 10px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .nav a { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; color: #cdd4ee; text-decoration: none; font-weight: 600; font-size: 0.89rem; }
+  .nav a svg { width: 17px; height: 17px; flex-shrink: 0; opacity: .75; }
+  .nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .nav a.on { background: var(--orange); color: #fff; }
+  .nav a.on svg { opacity: 1; }
+  .side__foot { padding: 14px 10px; border-top: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 3px; }
+  .side__foot a, .side__foot button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: 0; border-radius: 9px; background: none; color: #8d97c4; text-align: left; font: inherit; font-weight: 600; font-size: 0.85rem; text-decoration: none; cursor: pointer; }
+  .side__foot a:hover, .side__foot button:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .main { flex: 1; min-width: 0; padding: 26px 30px 70px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 1.3rem; letter-spacing: -0.02em; }
+  .topbar .crumb { color: var(--ink-soft); font-size: 0.82rem; margin-top: 2px; }
+
+  /* ---- Components ---- */
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 22px; box-shadow: 0 1px 3px rgba(16,24,40,.05); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.89rem; }
+  th, td { text-align: left; padding: 10px 11px; border-bottom: 1px solid var(--line); }
+  th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); white-space: nowrap; background: #fafbfd; }
+  tbody tr:hover { background: #fafbfd; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 5px; }
+  input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #d4d9e0; border-radius: 9px; font-size: 0.92rem; font-family: inherit; background: #fff; transition: border-color .12s, box-shadow .12s; }
+  input:focus, textarea:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,89,12,.13); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 18px; border: 0; border-radius: 9px; font-weight: 700; font-size: 0.88rem; cursor: pointer; text-decoration: none; font-family: inherit; transition: background .12s; }
+  .btn--primary { background: var(--orange); color: #fff; }
+  .btn--primary:hover { background: var(--orange-dark); }
+  .btn--ghost { background: #eef1f6; color: var(--ink); }
+  .btn--ghost:hover { background: #e3e8ef; }
   .btn--danger { background: #fee2e2; color: #b91c1c; }
-  .btn--sm { padding: 5px 11px; font-size: 0.8rem; white-space: nowrap; }
-  .msg { padding: 11px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; }
-  .msg--ok { background: #dcfce7; color: #14532d; }
-  .msg--err { background: #fee2e2; color: #991b1b; }
+  .btn--danger:hover { background: #fecaca; }
+  .btn--sm { padding: 6px 12px; font-size: 0.8rem; white-space: nowrap; }
+  .btn--block { width: 100%; }
+  .msg { padding: 12px 15px; border-radius: 10px; margin-bottom: 18px; font-size: 0.9rem; font-weight: 600; display: flex; gap: 9px; align-items: flex-start; }
+  .msg--ok { background: #ecfdf3; color: #067647; border: 1px solid #abefc6; }
+  .msg--err { background: #fef3f2; color: #b42318; border: 1px solid #fecdca; }
   .muted { color: #7a8494; font-size: 0.8rem; }
-  .login { max-width: 380px; margin: 12vh auto 0; }
-  .actions { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
-  .field { margin-bottom: 12px; }
-  .hint { background: #fff8f1; border: 1px solid #ffd9b3; color: #7c3b00; padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 14px; }
-  @media (max-width: 780px) { .table-scroll { overflow-x: auto; } .grid2 { grid-template-columns: 1fr; } }
+  .actions { margin-top: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .field { margin-bottom: 14px; }
+  .hint { background: #fff8f1; border: 1px solid #ffd9b3; color: #7c3b00; padding: 11px 14px; border-radius: 10px; font-size: 0.83rem; margin-bottom: 16px; line-height: 1.55; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #eef1f6; color: var(--ink-soft); }
+
+  @media (max-width: 860px) {
+    .layout { flex-direction: column; }
+    .side { width: 100%; height: auto; position: static; }
+    .nav { flex-direction: row; flex-wrap: wrap; padding: 10px; }
+    .nav a { padding: 8px 13px; font-size: 0.84rem; }
+    .side__foot { flex-direction: row; }
+    .main { padding: 18px 14px 60px; }
+    .table-scroll { overflow-x: auto; }
+    .grid2 { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
 <?php if (!$logged_in): ?>
-  <div class="card login">
-    <h1 style="margin-bottom:14px"><?= htmlspecialchars(SITE_NAME) ?> — Admin</h1>
+<div class="login-wrap">
+  <div class="login">
+    <div class="login-badge">MK</div>
+    <h1><?= htmlspecialchars(SITE_NAME) ?></h1>
+    <p class="sub">Admin panel — login karein</p>
     <?php if ($err): ?><div class="msg msg--err"><?= htmlspecialchars($err) ?></div><?php endif; ?>
     <form method="post">
       <input type="hidden" name="action" value="login">
-      <label>Password</label>
-      <input type="password" name="password" autofocus required>
-      <div class="actions"><button class="btn btn--primary" type="submit">Login</button></div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" autofocus required>
+      </div>
+      <button class="btn btn--primary btn--block" type="submit">Login</button>
     </form>
   </div>
+</div>
 <?php else: ?>
-  <div class="top">
-    <h1><?= htmlspecialchars(SITE_NAME) ?> — Admin</h1>
-    <div style="display:flex;gap:10px">
-      <a class="btn btn--ghost" href="/" target="_blank">Website dekhein ↗</a>
-      <form method="post" style="display:inline">
+<?php
+$TAB_TITLES = [
+    'routes' => ['Routes & Fares', 'One-way routes aur fares manage karein'],
+    'pages' => ['Pages', 'Website ke pages ka content edit karein'],
+    'blog' => ['Blog', 'Blog posts likhein aur manage karein'],
+    'settings' => ['Settings', 'Business details aur per-km rates'],
+    'password' => ['Password', 'Admin password badlein'],
+];
+$ICONS = [
+    'routes' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/></svg>',
+    'pages' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
+    'blog' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    'settings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    'password' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+];
+?>
+<div class="layout">
+  <aside class="side">
+    <div class="brand"><b><?= htmlspecialchars(SITE_NAME) ?></b><span>Admin Panel</span></div>
+    <nav class="nav">
+      <?php foreach ($TAB_TITLES as $t => $info): ?>
+      <a href="<?= tab_url($t) ?>" class="<?= $tab === $t ? 'on' : '' ?>"><?= $ICONS[$t] ?><?= htmlspecialchars($info[0]) ?></a>
+      <?php endforeach; ?>
+    </nav>
+    <div class="side__foot">
+      <a href="/" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>Website dekhein</a>
+      <form method="post">
         <input type="hidden" name="action" value="logout">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
-        <button class="btn btn--ghost" type="submit">Logout</button>
+        <button type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Logout</button>
       </form>
+    </div>
+  </aside>
+  <main class="main">
+  <div class="topbar">
+    <div>
+      <h1><?= htmlspecialchars($TAB_TITLES[$tab][0]) ?></h1>
+      <div class="crumb"><?= htmlspecialchars($TAB_TITLES[$tab][1]) ?></div>
     </div>
   </div>
 
-  <div class="tabs">
-    <a href="<?= tab_url('routes') ?>" class="<?= $tab === 'routes' ? 'on' : '' ?>">Routes &amp; Fares</a>
-    <a href="<?= tab_url('pages') ?>" class="<?= $tab === 'pages' ? 'on' : '' ?>">Pages</a>
-    <a href="<?= tab_url('blog') ?>" class="<?= $tab === 'blog' ? 'on' : '' ?>">Blog</a>
-    <a href="<?= tab_url('settings') ?>" class="<?= $tab === 'settings' ? 'on' : '' ?>">Settings</a>
-    <a href="<?= tab_url('password') ?>" class="<?= $tab === 'password' ? 'on' : '' ?>">Password</a>
-  </div>
-
-  <?php if ($msg): ?><div class="msg msg--ok"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
-  <?php if ($err): ?><div class="msg msg--err"><?= htmlspecialchars($err) ?></div><?php endif; ?>
+  <?php if ($msg): ?><div class="msg msg--ok">✓ <?= htmlspecialchars($msg) ?></div><?php endif; ?>
+  <?php if ($err): ?><div class="msg msg--err">✕ <?= htmlspecialchars($err) ?></div><?php endif; ?>
 
 <?php if ($tab === 'routes'): ?>
   <div class="card">
@@ -358,18 +425,22 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
       <input type="hidden" name="action" value="save_page">
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="page" value="<?= htmlspecialchars($edit_page) ?>">
-      <?php if (isset($fields['hero_title'])): ?>
-      <div class="field"><label>Heading (page ke top ka title)</label>
-        <input name="field_hero_title" value="<?= htmlspecialchars(page_raw_field($edit_page, 'hero_title')) ?>"></div>
-      <?php endif; ?>
-      <?php if (isset($fields['hero_sub'])): ?>
-      <div class="field"><label>Sub-heading (heading ke niche ki line)</label>
-        <input name="field_hero_sub" value="<?= htmlspecialchars(page_raw_field($edit_page, 'hero_sub')) ?>"></div>
-      <?php endif; ?>
-      <?php if (isset($fields['body'])): ?>
-      <div class="field"><label>Page content</label>
+      <?php
+      $field_labels = $PAGE_DEFAULTS[$edit_page]['field_labels'] ?? [];
+      $default_labels = [
+          'hero_title' => 'Heading (page ke top ka title)',
+          'hero_sub' => 'Sub-heading (heading ke niche ki line)',
+          'body' => 'Page content',
+      ];
+      foreach (array_keys($fields) as $fkey):
+          $flabel = $field_labels[$fkey] ?? $default_labels[$fkey] ?? ucwords(str_replace('_', ' ', $fkey));
+          if ($fkey === 'body'): ?>
+      <div class="field"><label><?= htmlspecialchars($flabel) ?></label>
         <textarea id="body-editor" name="field_body" rows="16"><?= htmlspecialchars(page_raw_field($edit_page, 'body')) ?></textarea></div>
-      <?php endif; ?>
+      <?php else: ?>
+      <div class="field"><label><?= htmlspecialchars($flabel) ?></label>
+        <input name="field_<?= htmlspecialchars($fkey) ?>" value="<?= htmlspecialchars(page_raw_field($edit_page, $fkey)) ?>"></div>
+      <?php endif; endforeach; ?>
       <div class="actions">
         <button class="btn btn--primary" type="submit">Save page</button>
         <a class="btn btn--ghost" href="<?= tab_url('pages') ?>">Cancel</a>
@@ -523,7 +594,8 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
   }
 </script>
 <?php endif; ?>
-<?php endif; ?>
+  </main>
 </div>
+<?php endif; ?>
 </body>
 </html>
