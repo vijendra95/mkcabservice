@@ -307,7 +307,7 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
         <div><label>Sedan fare (₹)</label><input name="sedan" type="number" min="0" value="<?= (int)($edit_route['sedan'] ?? '') ?: '' ?>" required></div>
         <div><label>SUV fare (₹)</label><input name="suv" type="number" min="0" value="<?= (int)($edit_route['suv'] ?? '') ?: '' ?>" required></div>
         <div><label>Innova fare (₹)</label><input name="innova" type="number" min="0" value="<?= (int)($edit_route['innova'] ?? '') ?: '' ?>" required></div>
-        <div><label>Tempo Traveller fare (₹)</label><input name="tempo" type="number" min="0" value="<?= (int)($edit_route['tempo'] ?? '') ?: '' ?>" required></div>
+        <div><label>Tempo Traveller fare (₹) — website pe "On Demand" dikhta hai</label><input name="tempo" type="number" min="0" value="<?= (int)($edit_route['tempo'] ?? '') ?: '' ?>"></div>
         <div><label>Tag (optional, e.g. Most booked)</label><input name="tag" value="<?= htmlspecialchars($edit_route['tag'] ?? '') ?>"></div>
       </div>
       <div class="actions">

@@ -51,7 +51,7 @@ HTML,
 <h2>Where can I go?</h2>
 <p>Anywhere in Rajasthan and North India. Our most popular routes from Jaipur are Delhi, Udaipur, Agra, Jodhpur, Ajmer, Jaisalmer, Bikaner, Kota, Mount Abu and Ranthambore &mdash; but if your destination has a road, we will take you there.</p>
 <h2>How is the fare calculated?</h2>
-<p>Fares are based on distance and car type: Sedan from &#8377;11/km, SUV from &#8377;15/km, Innova Crysta from &#8377;19/km and Tempo Traveller from &#8377;35/km, plus a fixed driver allowance (&#8377;500 for Tempo Traveller). Only parking is billed extra. For round trips, distance is counted both ways.</p>
+<p>Fares are based on distance and car type: Sedan from &#8377;11/km, SUV from &#8377;15/km and Innova Crysta from &#8377;19/km, plus a fixed driver allowance. Tempo Traveller pricing is available on demand &mdash; WhatsApp us for a quote. Only parking is billed extra. For round trips, distance is counted both ways.</p>
 <h2>When should I book?</h2>
 <p>You can book any time &mdash; we run 24x7. For early-morning departures or peak season travel, booking a few hours in advance helps us send you the best car and driver for your route.</p>
 <h2>Why choose MK Cab Service for outstation travel?</h2>

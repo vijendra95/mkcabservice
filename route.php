@@ -36,7 +36,7 @@ $cars = [
     ['name' => 'Sedan', 'models' => 'Dzire, Etios, Aura', 'seats' => '4', 'fare' => $r['sedan']],
     ['name' => 'SUV', 'models' => 'Ertiga, Marazzo', 'seats' => '6-7', 'fare' => $r['suv']],
     ['name' => 'Innova Crysta', 'models' => 'Innova Crysta', 'seats' => '6-7', 'fare' => $r['innova']],
-    ['name' => 'Tempo Traveller', 'models' => '12-17 seater', 'seats' => '12-17', 'fare' => $r['tempo']],
+    ['name' => 'Tempo Traveller', 'models' => '12-17 seater', 'seats' => '12-17', 'fare' => null],
 ];
 
 // Three other routes for the "More routes" section.
@@ -73,7 +73,7 @@ include __DIR__ . '/includes/header.php';
           <td><b><?= $c['name'] ?></b></td>
           <td><?= $c['models'] ?></td>
           <td><?= $c['seats'] ?></td>
-          <td><b><?= inr($c['fare']) ?></b></td>
+          <td><b><?= $c['fare'] === null ? 'On Demand' : inr($c['fare']) ?></b></td>
         </tr>
 <?php endforeach; ?>
       </tbody>

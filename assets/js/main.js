@@ -41,6 +41,11 @@ function updateFare() {
   const km = Math.max(1, parseInt(feDistance.value || '0', 10));
   const rate = parseInt(feCar.value, 10);
   const mult = feTrip ? parseInt(feTrip.value, 10) : 1;
+  if (!rate) {
+    feAmount.textContent = 'On Demand';
+    if (feBreakdown) feBreakdown.textContent = 'WhatsApp us for a Tempo Traveller quote';
+    return;
+  }
   const selected = feCar.options[feCar.selectedIndex];
   const perTrip = parseInt(selected.dataset.allowance || feAmount.dataset.allowance || '300', 10);
   const allowance = perTrip * mult;

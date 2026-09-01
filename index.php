@@ -187,7 +187,7 @@ include __DIR__ . '/includes/header.php';
           <td><b><?= inr($r['sedan']) ?></b></td>
           <td><?= inr($r['suv']) ?></td>
           <td><?= inr($r['innova']) ?></td>
-          <td><?= inr($r['tempo']) ?></td>
+          <td>On Demand</td>
         </tr>
 <?php endforeach; ?>
       </tbody>
@@ -227,7 +227,7 @@ include __DIR__ . '/includes/header.php';
             <option value="<?= RATE_SEDAN ?>" data-allowance="<?= ALLOWANCE_DEFAULT ?>" selected>Sedan · ₹<?= RATE_SEDAN ?>/km</option>
             <option value="<?= RATE_SUV ?>" data-allowance="<?= ALLOWANCE_DEFAULT ?>">SUV · ₹<?= RATE_SUV ?>/km</option>
             <option value="<?= RATE_INNOVA ?>" data-allowance="<?= ALLOWANCE_DEFAULT ?>">Innova Crysta · ₹<?= RATE_INNOVA ?>/km</option>
-            <option value="<?= RATE_TEMPO ?>" data-allowance="<?= ALLOWANCE_TEMPO ?>">Tempo Traveller · ₹<?= RATE_TEMPO ?>/km</option>
+            <option value="0">Tempo Traveller · On Demand</option>
           </select>
         </div>
         <div class="field">
@@ -320,7 +320,7 @@ include __DIR__ . '/includes/header.php';
         <h3>Tempo Traveller</h3>
         <p>12-17 seater · Group travel, push-back seats</p>
         <ul><li>12-17 seats</li><li>15+ bags</li><li>AC</li></ul>
-        <div class="fleet-card__rate">From <b>₹<?= RATE_TEMPO ?>/km</b></div>
+        <div class="fleet-card__rate"><b>On Demand</b></div>
       </div>
     </div>
     <div class="text-center mt-3"><a class="btn btn--ghost btn--lg" href="/fleet.php">View full fleet &amp; pricing →</a></div>

@@ -53,7 +53,7 @@ include __DIR__ . '/includes/header.php';
         <p>12-17 seater</p>
         <p style="margin-top:6px">Group travel, push-back seats</p>
         <ul><li>12-17 seats</li><li>15+ bags</li><li>AC</li></ul>
-        <div class="fleet-card__rate">From <b>₹<?= RATE_TEMPO ?>/km</b></div>
+        <div class="fleet-card__rate"><b>On Demand</b></div>
       </div>
           </div>
 

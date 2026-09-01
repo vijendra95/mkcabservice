@@ -47,7 +47,7 @@ include __DIR__ . '/includes/header.php';
                 <tr><td><b>Sedan</b></td><td>Dzire, Etios, Aura</td><td>4</td><td><b>₹<?= RATE_SEDAN ?>/km</b></td></tr>
                 <tr><td><b>SUV</b></td><td>Ertiga, Marazzo</td><td>6-7</td><td><b>₹<?= RATE_SUV ?>/km</b></td></tr>
                 <tr><td><b>Innova Crysta</b></td><td>Innova Crysta</td><td>6-7</td><td><b>₹<?= RATE_INNOVA ?>/km</b></td></tr>
-                <tr><td><b>Tempo Traveller</b></td><td>12-17 seater</td><td>12-17</td><td><b>₹<?= RATE_TEMPO ?>/km</b></td></tr>
+                <tr><td><b>Tempo Traveller</b></td><td>12-17 seater</td><td>12-17</td><td><b>On Demand</b></td></tr>
               </tbody>
     </table>
     <p style="color:var(--ink-500);font-size:0.88rem">Minimum 250 km/day for round trips, driver allowance ₹<?= ALLOWANCE_DEFAULT ?>/day (Tempo Traveller ₹<?= ALLOWANCE_TEMPO ?>/day). Only parking extra. <a style="color:var(--orange-600);font-weight:700" href="<?= $wa_page ?>" target="_blank" rel="noopener">WhatsApp for exact quote</a>.</p>
