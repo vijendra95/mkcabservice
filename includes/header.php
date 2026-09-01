@@ -53,8 +53,8 @@ $canonical = $canonical ?? null;
         <li class="has-drop">
           <a href="/#routes" aria-haspopup="true">One Way Taxi ▾</a>
           <ul class="drop">
-<?php foreach ($ROUTES as $slug => $r): ?>
-            <li><a href="<?= route_url($slug) ?>"><?= htmlspecialchars($r['from']) ?> → <?= htmlspecialchars($r['to']) ?></a></li>
+<?php foreach ($ROUTES as $nav_slug => $nav_r): ?>
+            <li><a href="<?= route_url($nav_slug) ?>"><?= htmlspecialchars($nav_r['from']) ?> → <?= htmlspecialchars($nav_r['to']) ?></a></li>
 <?php endforeach; ?>
           </ul>
         </li>

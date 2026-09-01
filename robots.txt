@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /includes/
 Disallow: /data/
+Disallow: /admin/
 
 Sitemap: https://mkcabservice.com/sitemap.php

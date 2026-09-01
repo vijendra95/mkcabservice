@@ -1,0 +1,6 @@
+# Block direct web access to data files (routes.json, admin.json, blog posts).
+Order allow,deny
+Deny from all
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>

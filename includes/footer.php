@@ -23,8 +23,8 @@
       <div>
         <h3>Popular Routes</h3>
         <ul class="footer__links">
-<?php foreach (array_slice($ROUTES, 0, 6, true) as $slug => $r): ?>
-          <li><a href="<?= route_url($slug) ?>"><?= htmlspecialchars(route_title($r)) ?></a></li>
+<?php foreach (array_slice($ROUTES, 0, 6, true) as $foot_slug => $foot_r): ?>
+          <li><a href="<?= route_url($foot_slug) ?>"><?= htmlspecialchars(route_title($foot_r)) ?></a></li>
 <?php endforeach; ?>
         </ul>
       </div>

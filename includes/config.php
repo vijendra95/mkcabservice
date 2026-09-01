@@ -102,6 +102,16 @@ $ROUTES = [
     ],
 ];
 
+// Routes edited from the admin panel are stored in data/routes.json and
+// override the defaults above.
+$__routes_file = __DIR__ . '/../data/routes.json';
+if (is_file($__routes_file)) {
+    $__saved = json_decode((string)file_get_contents($__routes_file), true);
+    if (is_array($__saved) && count($__saved) > 0) {
+        $ROUTES = $__saved;
+    }
+}
+
 function route_url(string $slug): string {
     return '/' . $slug;
 }
