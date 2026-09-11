@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/config.php';
 $page_title = 'Travel Blog | MK Cab Service';
 $page_desc = 'Travel guides, route tips and Rajasthan trip ideas from the MK Cab Service team — fares, routes and everything you need to plan your next cab journey.';
-$canonical = '/blog.php';
+$canonical = '/blog/';
 include __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
@@ -16,7 +16,7 @@ include __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="grid grid-3">
 <?php foreach (blog_posts() as $post): ?>
-      <a class="card blog-card" href="/blog-post.php?slug=<?= urlencode($post['slug']) ?>">
+      <a class="card blog-card" href="<?= blog_url($post['slug']) ?>">
         <span class="blog-card__date"><?= htmlspecialchars($post['date']) ?></span>
         <h3><?= htmlspecialchars($post['title']) ?></h3>
         <p><?= htmlspecialchars($post['excerpt']) ?></p>

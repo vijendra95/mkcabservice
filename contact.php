@@ -5,6 +5,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = trim($_POST['phone'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $message = trim($_POST['message'] ?? '');
+    if ($name !== '' || $phone !== '' || $message !== '') {
+        save_enquiry('contact', ['name' => $name, 'phone' => $phone, 'email' => $email, 'message' => $message]);
+    }
     $msg = "Hello MK Cab Service, message from website contact form.\n"
          . "Name: $name\nMobile: $phone\n"
          . ($email !== '' ? "Email: $email\n" : '')

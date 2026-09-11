@@ -1,5 +1,6 @@
 <?php
 // Site-wide configuration and route data for MK Cab Service.
+date_default_timezone_set('Asia/Kolkata');
 
 // Default settings; overridden by data/settings.json (edited from /admin).
 $SETTINGS = [
@@ -190,4 +191,43 @@ function blog_posts(): array {
 function blog_post_body(string $slug): string {
     $file = __DIR__ . '/../data/posts/' . basename($slug) . '.html';
     return is_file($file) ? render_tokens((string)file_get_contents($file)) : '';
+}
+
+function blog_url(string $slug): string {
+    return '/blog/' . rawurlencode($slug);
+}
+
+// ---------------------------------------------------------------------------
+// Booking / contact enquiries — appended to data/bookings.json for the admin
+// "Bookings" tab. Failure to write never blocks the WhatsApp handoff.
+// ---------------------------------------------------------------------------
+function save_enquiry(string $type, array $fields): void {
+    $file = __DIR__ . '/../data/bookings.json';
+    $dir = dirname($file);
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    $fh = @fopen($file, 'c+');
+    if (!$fh) return;
+    if (flock($fh, LOCK_EX)) {
+        $raw = stream_get_contents($fh);
+        $list = $raw !== '' ? (json_decode($raw, true) ?: []) : [];
+        $clean = [];
+        foreach ($fields as $k => $v) {
+            $v = trim(strip_tags((string)$v));
+            if ($v !== '') $clean[$k] = function_exists('mb_substr') ? mb_substr($v, 0, 1000) : substr($v, 0, 1000);
+        }
+        array_unshift($list, [
+            'id' => bin2hex(random_bytes(6)),
+            'type' => $type,
+            'status' => 'new',
+            'created_at' => date('c'),
+            'fields' => $clean,
+        ]);
+        $list = array_slice($list, 0, 2000);
+        ftruncate($fh, 0);
+        rewind($fh);
+        fwrite($fh, json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        fflush($fh);
+        flock($fh, LOCK_UN);
+    }
+    fclose($fh);
 }

@@ -73,6 +73,11 @@ if (feBook) {
     const msg =
       'Hello MK Cab Service, I would like to book: ' + routeText +
       ' | Car: ' + carText + ' | Trip: ' + tripText + ' | Estimated: ' + feAmount.textContent;
+    const log = new FormData();
+    log.append('route', routeText + ' (' + tripText + ')');
+    log.append('car', carText);
+    log.append('estimate', feAmount.textContent);
+    if (navigator.sendBeacon) navigator.sendBeacon('/book.php', log);
     window.open('https://wa.me/' + (feBook.dataset.wa || '') + '?text=' + encodeURIComponent(msg), '_blank');
   });
 }

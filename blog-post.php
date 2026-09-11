@@ -11,14 +11,14 @@ if (!$post || blog_post_body($slug) === '') {
     http_response_code(404);
     $page_title = 'Post not found | MK Cab Service';
     include __DIR__ . '/includes/header.php';
-    echo '<section class="page-hero"><div class="container"><h1>Post not found</h1><p><a href="/blog.php" style="color:#fff;text-decoration:underline">Back to blog</a></p></div></section>';
+    echo '<section class="page-hero"><div class="container"><h1>Post not found</h1><p><a href="/blog/" style="color:#fff;text-decoration:underline">Back to blog</a></p></div></section>';
     include __DIR__ . '/includes/footer.php';
     exit;
 }
 
 $page_title = ($post['seo_title'] ?? '') !== '' ? $post['seo_title'] : $post['title'] . ' | ' . SITE_NAME;
 $page_desc = ($post['seo_desc'] ?? '') !== '' ? $post['seo_desc'] : ($post['excerpt'] ?? '');
-$canonical = '/blog-post.php?slug=' . $slug;
+$canonical = blog_url($slug);
 include __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
@@ -33,7 +33,7 @@ include __DIR__ . '/includes/header.php';
     <div class="content-block blog-content">
 <?= blog_post_body($slug) ?>
     </div>
-    <p style="margin-top:30px"><a style="color:var(--orange-600);font-weight:700" href="/blog.php">← Back to all posts</a></p>
+    <p style="margin-top:30px"><a style="color:var(--orange-600);font-weight:700" href="/blog/">← Back to all posts</a></p>
   </div>
 </section>
 

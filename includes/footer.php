@@ -17,7 +17,7 @@
           <li><a href="/local-car-rental.php">Local Car Rental</a></li>
           <li><a href="/tour-packages.php">Tour Packages</a></li>
           <li><a href="/fleet.php">Our Fleet</a></li>
-          <li><a href="/blog.php">Blog</a></li>
+          <li><a href="/blog/">Blog</a></li>
         </ul>
       </div>
       <div>

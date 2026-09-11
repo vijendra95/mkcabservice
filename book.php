@@ -10,6 +10,17 @@ $time = trim($_POST['time'] ?? '');
 $name = trim($_POST['name'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
 
+$enquiry = ['trip' => $trip, 'pickup' => $pickup, 'drop' => $drop, 'date' => $date, 'time' => $time, 'name' => $name, 'phone' => $phone];
+if (isset($_POST['estimate'])) {
+    // Fare-estimator "Book on WhatsApp" button pings this endpoint in the background.
+    save_enquiry('estimate', ['route' => $_POST['route'] ?? '', 'car' => $_POST['car'] ?? '', 'estimate' => $_POST['estimate'] ?? '']);
+    http_response_code(204);
+    exit;
+}
+if ($name !== '' || $phone !== '' || $pickup !== '') {
+    save_enquiry('booking', $enquiry);
+}
+
 $msg = "Hello MK Cab Service, I'd like to book a cab.\n"
      . "Trip: $trip\n"
      . "Pickup: $pickup\n"

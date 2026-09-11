@@ -7,6 +7,18 @@ RewriteEngine On
 RewriteCond %{THE_REQUEST} \s/route\.php\?slug=([a-z0-9-]+?)(-one-way)?-taxi[\s&] [NC]
 RewriteRule ^route\.php$ /%1-one-way-taxi? [R=301,L]
 
+# 301: old blog-post.php?slug=xxx links → /blog/xxx
+RewriteCond %{THE_REQUEST} \s/blog-post\.php\?slug=([a-z0-9-]+)[\s&] [NC]
+RewriteRule ^blog-post\.php$ /blog/%1? [R=301,L]
+
+# 301: /blog.php → /blog/
+RewriteCond %{THE_REQUEST} \s/blog\.php[\s?] [NC]
+RewriteRule ^blog\.php$ /blog/? [R=301,L]
+
+# Clean blog URLs
+RewriteRule ^blog/?$ blog.php [L]
+RewriteRule ^blog/([a-z0-9-]+)/?$ blog-post.php?slug=$1 [L]
+
 # Clean one-way taxi URLs → route.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

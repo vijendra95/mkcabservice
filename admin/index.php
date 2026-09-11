@@ -1,5 +1,5 @@
 <?php
-// MK Cab Service — admin panel (routes, pages, blog, settings).
+// MK Cab Service — admin panel (bookings, routes, pages, blog, settings).
 session_start();
 require_once __DIR__ . '/../includes/config.php';
 
@@ -9,6 +9,7 @@ $ROUTES_FILE = $DATA_DIR . '/routes.json';
 $ADMIN_FILE = $DATA_DIR . '/admin.json';
 $SETTINGS_FILE = $DATA_DIR . '/settings.json';
 $POSTS_FILE = $DATA_DIR . '/posts.json';
+$BOOKINGS_FILE = $DATA_DIR . '/bookings.json';
 
 function admin_password_hash(string $file): string {
     if (is_file($file)) {
@@ -27,6 +28,11 @@ function save_json(string $file, $data): bool {
 function admin_posts(): array {
     global $POSTS_FILE;
     return is_file($POSTS_FILE) ? (json_decode((string)file_get_contents($POSTS_FILE), true) ?: []) : [];
+}
+
+function admin_bookings(): array {
+    global $BOOKINGS_FILE;
+    return is_file($BOOKINGS_FILE) ? (json_decode((string)file_get_contents($BOOKINGS_FILE), true) ?: []) : [];
 }
 
 function make_slug_from(string $text, string $suffix = ''): string {
@@ -63,6 +69,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         session_destroy();
         header('Location: /admin/');
         exit;
+    } elseif ($action === 'booking_status') {
+        $id = $_POST['id'] ?? '';
+        $status = $_POST['status'] ?? '';
+        if (in_array($status, ['new', 'contacted', 'done'], true)) {
+            $list = admin_bookings();
+            foreach ($list as $i => $b) {
+                if ($b['id'] === $id) { $list[$i]['status'] = $status; break; }
+            }
+            if (save_json($BOOKINGS_FILE, $list)) { $msg = 'Booking status update ho gaya.'; } else { $err = $WRITE_ERR; }
+        }
+    } elseif ($action === 'delete_booking') {
+        $id = $_POST['id'] ?? '';
+        $list = array_values(array_filter(admin_bookings(), fn($b) => $b['id'] !== $id));
+        if (save_json($BOOKINGS_FILE, $list)) { $msg = 'Enquiry delete ho gayi.'; } else { $err = $WRITE_ERR; }
     } elseif ($action === 'save_route') {
         $from = trim($_POST['from'] ?? '');
         $to = trim($_POST['to'] ?? '');
@@ -191,8 +211,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$tab = $_GET['tab'] ?? 'routes';
-if (!in_array($tab, ['routes', 'pages', 'blog', 'settings', 'password'], true)) $tab = 'routes';
+$tab = $_GET['tab'] ?? 'bookings';
+if (!in_array($tab, ['bookings', 'routes', 'pages', 'blog', 'settings', 'password'], true)) $tab = 'bookings';
+
+$bookings = admin_bookings();
+$new_bookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? 'new') === 'new'));
+$booking_filter = $_GET['status'] ?? 'all';
+if (!in_array($booking_filter, ['all', 'new', 'contacted', 'done'], true)) $booking_filter = 'all';
 
 $edit_slug = $_GET['edit'] ?? '';
 $edit_route = ($tab === 'routes' && $edit_slug !== '' && isset($ROUTES[$edit_slug])) ? $ROUTES[$edit_slug] : null;
@@ -283,6 +308,26 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
   .field { margin-bottom: 14px; }
   .hint { background: #fff8f1; border: 1px solid #ffd9b3; color: #7c3b00; padding: 11px 14px; border-radius: 10px; font-size: 0.83rem; margin-bottom: 16px; line-height: 1.55; }
   .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #eef1f6; color: var(--ink-soft); }
+  .pill--new { background: #fff1e6; color: var(--orange-dark); }
+  .pill--contacted { background: #e8f0fe; color: #1d4ed8; }
+  .pill--done { background: #ecfdf3; color: #067647; }
+  .pill--booking { background: #fdf2f8; color: #be185d; }
+  .pill--contact { background: #eef2ff; color: #4338ca; }
+  .pill--estimate { background: #f0fdf4; color: #15803d; }
+  .badge { margin-left: auto; background: #fff; color: var(--orange-dark); font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; min-width: 20px; text-align: center; }
+  .nav a:not(.on) .badge { background: var(--orange); color: #fff; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(16,24,40,.05); }
+  .stat b { display: block; font-size: 1.6rem; letter-spacing: -0.02em; }
+  .stat span { font-size: 0.78rem; color: var(--ink-soft); font-weight: 600; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filters a { padding: 6px 13px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-decoration: none; background: #eef1f6; color: var(--ink-soft); }
+  .filters a.on { background: var(--navy); color: #fff; }
+  .enq { font-size: 0.86rem; line-height: 1.55; }
+  .enq b { color: var(--ink-soft); font-weight: 600; }
+  .enq a { color: var(--orange-dark); font-weight: 700; text-decoration: none; }
+  .inline-form { display: inline; }
+  select { padding: 6px 10px; border: 1px solid #d4d9e0; border-radius: 8px; font: inherit; font-size: 0.8rem; background: #fff; }
 
   @media (max-width: 860px) {
     .layout { flex-direction: column; }
@@ -317,6 +362,7 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
 <?php else: ?>
 <?php
 $TAB_TITLES = [
+    'bookings' => ['Bookings', 'Website se aayi booking aur contact enquiries'],
     'routes' => ['Routes & Fares', 'One-way routes aur fares manage karein'],
     'pages' => ['Pages', 'Website ke pages ka content edit karein'],
     'blog' => ['Blog', 'Blog posts likhein aur manage karein'],
@@ -324,6 +370,7 @@ $TAB_TITLES = [
     'password' => ['Password', 'Admin password badlein'],
 ];
 $ICONS = [
+    'bookings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
     'routes' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/></svg>',
     'pages' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
     'blog' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
@@ -336,7 +383,7 @@ $ICONS = [
     <div class="brand"><b><?= htmlspecialchars(SITE_NAME) ?></b><span>Admin Panel</span></div>
     <nav class="nav">
       <?php foreach ($TAB_TITLES as $t => $info): ?>
-      <a href="<?= tab_url($t) ?>" class="<?= $tab === $t ? 'on' : '' ?>"><?= $ICONS[$t] ?><?= htmlspecialchars($info[0]) ?></a>
+      <a href="<?= tab_url($t) ?>" class="<?= $tab === $t ? 'on' : '' ?>"><?= $ICONS[$t] ?><?= htmlspecialchars($info[0]) ?><?php if ($t === 'bookings' && $new_bookings > 0): ?><span class="badge"><?= $new_bookings ?></span><?php endif; ?></a>
       <?php endforeach; ?>
     </nav>
     <div class="side__foot">
@@ -359,7 +406,77 @@ $ICONS = [
   <?php if ($msg): ?><div class="msg msg--ok">✓ <?= htmlspecialchars($msg) ?></div><?php endif; ?>
   <?php if ($err): ?><div class="msg msg--err">✕ <?= htmlspecialchars($err) ?></div><?php endif; ?>
 
-<?php if ($tab === 'routes'): ?>
+<?php if ($tab === 'bookings'): ?>
+  <?php
+  $counts = ['all' => count($bookings), 'new' => 0, 'contacted' => 0, 'done' => 0];
+  foreach ($bookings as $b) { $counts[$b['status'] ?? 'new'] = ($counts[$b['status'] ?? 'new'] ?? 0) + 1; }
+  $TYPE_LABELS = ['booking' => 'Booking', 'contact' => 'Contact', 'estimate' => 'Fare estimate'];
+  $FIELD_LABELS = ['trip' => 'Trip', 'pickup' => 'Pickup', 'drop' => 'Drop', 'date' => 'Date', 'time' => 'Time', 'name' => 'Name', 'phone' => 'Mobile', 'email' => 'Email', 'message' => 'Message', 'route' => 'Route', 'car' => 'Car', 'estimate' => 'Estimate'];
+  $shown = array_values(array_filter($bookings, fn($b) => $booking_filter === 'all' || ($b['status'] ?? 'new') === $booking_filter));
+  ?>
+  <div class="stats">
+    <div class="stat"><b><?= $counts['all'] ?></b><span>Total enquiries</span></div>
+    <div class="stat"><b style="color:var(--orange)"><?= $counts['new'] ?></b><span>New (pending)</span></div>
+    <div class="stat"><b style="color:#1d4ed8"><?= $counts['contacted'] ?></b><span>Contacted</span></div>
+    <div class="stat"><b style="color:#067647"><?= $counts['done'] ?></b><span>Done</span></div>
+  </div>
+  <div class="card">
+    <div class="filters">
+      <?php foreach (['all' => 'Sab', 'new' => 'New', 'contacted' => 'Contacted', 'done' => 'Done'] as $f => $fl): ?>
+      <a href="<?= tab_url('bookings') ?>&status=<?= $f ?>" class="<?= $booking_filter === $f ? 'on' : '' ?>"><?= $fl ?> (<?= $counts[$f] ?>)</a>
+      <?php endforeach; ?>
+    </div>
+    <?php if (!$shown): ?>
+    <p class="muted" style="padding:20px 0;text-align:center">Abhi koi enquiry nahi hai. Website ke booking form, contact form ya fare estimator se aane wali har enquiry yahan dikhegi (WhatsApp pe bhi jati hai).</p>
+    <?php else: ?>
+    <div class="table-scroll">
+    <table>
+      <thead><tr><th>Date</th><th>Type</th><th>Details</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      <?php foreach ($shown as $b): $st = $b['status'] ?? 'new'; $ph = preg_replace('/\D+/', '', $b['fields']['phone'] ?? ''); ?>
+        <tr>
+          <td style="white-space:nowrap"><?= htmlspecialchars(date('j M Y', strtotime($b['created_at']))) ?><br><span class="muted"><?= htmlspecialchars(date('g:i A', strtotime($b['created_at']))) ?></span></td>
+          <td><span class="pill pill--<?= htmlspecialchars($b['type']) ?>"><?= htmlspecialchars($TYPE_LABELS[$b['type']] ?? $b['type']) ?></span></td>
+          <td class="enq">
+            <?php foreach ($b['fields'] as $k => $v): ?>
+              <b><?= htmlspecialchars($FIELD_LABELS[$k] ?? ucfirst($k)) ?>:</b>
+              <?php if ($k === 'phone' && $ph !== ''): ?>
+                <a href="tel:<?= htmlspecialchars($ph) ?>"><?= htmlspecialchars($v) ?></a>
+                · <a href="https://wa.me/<?= strlen($ph) === 10 ? '91' . $ph : $ph ?>" target="_blank" rel="noopener">WhatsApp</a>
+              <?php else: ?>
+                <?= nl2br(htmlspecialchars($v)) ?>
+              <?php endif; ?><br>
+            <?php endforeach; ?>
+          </td>
+          <td>
+            <form method="post" action="<?= tab_url('bookings') ?>&status=<?= $booking_filter ?>" class="inline-form">
+              <input type="hidden" name="action" value="booking_status">
+              <input type="hidden" name="csrf" value="<?= $csrf ?>">
+              <input type="hidden" name="id" value="<?= htmlspecialchars($b['id']) ?>">
+              <select name="status" onchange="this.form.submit()">
+                <option value="new" <?= $st === 'new' ? 'selected' : '' ?>>New</option>
+                <option value="contacted" <?= $st === 'contacted' ? 'selected' : '' ?>>Contacted</option>
+                <option value="done" <?= $st === 'done' ? 'selected' : '' ?>>Done</option>
+              </select>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="<?= tab_url('bookings') ?>&status=<?= $booking_filter ?>" onsubmit="return confirm('Ye enquiry delete karein?')">
+              <input type="hidden" name="action" value="delete_booking">
+              <input type="hidden" name="csrf" value="<?= $csrf ?>">
+              <input type="hidden" name="id" value="<?= htmlspecialchars($b['id']) ?>">
+              <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+    </div>
+    <?php endif; ?>
+  </div>
+
+<?php elseif ($tab === 'routes'): ?>
   <div class="card">
     <h2><?= $edit_route ? 'Route edit karein: ' . htmlspecialchars($edit_route['from'] . ' → ' . $edit_route['to']) : 'Naya route add karein' ?></h2>
     <form method="post" action="<?= tab_url('routes') ?>">
@@ -509,11 +626,11 @@ $ICONS = [
       <tbody>
       <?php foreach (admin_posts() as $p): ?>
         <tr>
-          <td><b><?= htmlspecialchars($p['title']) ?></b><br><span class="muted">/blog-post.php?slug=<?= htmlspecialchars($p['slug']) ?></span></td>
+          <td><b><?= htmlspecialchars($p['title']) ?></b><br><span class="muted"><?= htmlspecialchars(blog_url($p['slug'])) ?></span></td>
           <td style="white-space:nowrap"><?= htmlspecialchars($p['date']) ?></td>
           <td style="text-align:right;white-space:nowrap">
             <a class="btn btn--ghost btn--sm" href="<?= tab_url('blog') ?>&edit=<?= urlencode($p['slug']) ?>">Edit</a>
-            <a class="btn btn--ghost btn--sm" href="/blog-post.php?slug=<?= urlencode($p['slug']) ?>" target="_blank">View</a>
+            <a class="btn btn--ghost btn--sm" href="<?= blog_url($p['slug']) ?>" target="_blank">View</a>
             <form method="post" action="<?= tab_url('blog') ?>" style="display:inline" onsubmit="return confirm('Ye post delete karein?')">
               <input type="hidden" name="action" value="delete_post">
               <input type="hidden" name="csrf" value="<?= $csrf ?>">
