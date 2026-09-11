@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-$page_title = 'Local Car Rental in Jaipur | MK Cab Service | +91 91161 71336';
-$page_desc = 'Hourly car rentals with driver for Jaipur sightseeing, shopping runs, weddings and business meetings — flexible 8hr/80km and half-day packages.';
+$page_title = page_field('local', 'seo_title');
+$page_desc = page_field('local', 'seo_desc');
 $canonical = '/local-car-rental.php';
 $wa_page = wa_link("Hello MK Cab Service, I'd like to enquire about Local Car Rental in Jaipur.");
 include __DIR__ . '/includes/header.php';

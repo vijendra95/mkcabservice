@@ -19,6 +19,7 @@ if (!$post || blog_post_body($slug) === '') {
 $page_title = ($post['seo_title'] ?? '') !== '' ? $post['seo_title'] : $post['title'] . ' | ' . SITE_NAME;
 $page_desc = ($post['seo_desc'] ?? '') !== '' ? $post['seo_desc'] : ($post['excerpt'] ?? '');
 $canonical = blog_url($slug);
+$og_image = !empty($post['image']) ? $post['image'] : null;
 include __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
@@ -30,6 +31,9 @@ include __DIR__ . '/includes/header.php';
 
 <section class="section">
   <div class="container" style="max-width:820px">
+<?php if (!empty($post['image'])): ?>
+    <div class="blog-hero-img"><img src="<?= htmlspecialchars($post['image']) ?>" alt="<?= htmlspecialchars($post['title']) ?>"></div>
+<?php endif; ?>
     <div class="content-block blog-content">
 <?= blog_post_body($slug) ?>
     </div>

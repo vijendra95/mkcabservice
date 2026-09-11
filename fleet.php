@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-$page_title = 'Our Fleet & Pricing | MK Cab Service';
-$page_desc = 'Sedans, SUVs, Innova Crysta and Tempo Travellers with driver — see seats, luggage capacity and per-km rates for every car in the MK Cab Service fleet.';
+$page_title = page_field('fleet', 'seo_title');
+$page_desc = page_field('fleet', 'seo_desc');
 $canonical = '/fleet.php';
 include __DIR__ . '/includes/header.php';
 ?>

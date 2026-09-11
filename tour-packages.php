@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-$page_title = 'Rajasthan Tour Packages | MK Cab Service | +91 91161 71336';
-$page_desc = 'Multi-day road trips across Rajasthan with a dedicated car and driver — Golden Triangle, lakes of Udaipur, the blue city of Jodhpur and the dunes of Jaisalmer.';
+$page_title = page_field('tours', 'seo_title');
+$page_desc = page_field('tours', 'seo_desc');
 $canonical = '/tour-packages.php';
 $wa_page = wa_link("Hello MK Cab Service, I'd like to enquire about Rajasthan Tour Packages.");
 include __DIR__ . '/includes/header.php';
@@ -20,19 +20,28 @@ include __DIR__ . '/includes/header.php';
 <section class="section">
   <div class="container">
     <div class="grid grid-3" style="margin-bottom:40px">
-            <div class="card">
-        <h3>Golden Triangle</h3>
-        <p>Jaipur – Agra – Delhi circuit, typically 3-4 days, ideal for first-time visitors.</p>
+<?php foreach (site_tours() as $t): $t_wa = wa_link("Hello MK Cab Service, I'd like to enquire about the {$t['title']} tour package."); ?>
+      <div class="card tour-card">
+<?php if (!empty($t['image'])): ?>
+        <div class="tour-card__img"><img src="<?= htmlspecialchars($t['image']) ?>" alt="<?= htmlspecialchars($t['title']) ?>" loading="lazy"></div>
+<?php endif; ?>
+        <div class="tour-card__meta">
+<?php if (!empty($t['duration'])): ?><span>⏱ <?= htmlspecialchars($t['duration']) ?></span><?php endif; ?>
+<?php if (!empty($t['price'])): ?><span class="tour-card__price"><?= htmlspecialchars($t['price']) ?></span><?php endif; ?>
+        </div>
+        <h3><?= htmlspecialchars($t['title']) ?></h3>
+        <p><?= htmlspecialchars($t['desc'] ?? '') ?></p>
+<?php $hl = array_filter(array_map('trim', explode("\n", (string)($t['highlights'] ?? '')))); if ($hl): ?>
+        <ul class="tour-card__list">
+<?php foreach ($hl as $h): ?>
+          <li><?= htmlspecialchars($h) ?></li>
+<?php endforeach; ?>
+        </ul>
+<?php endif; ?>
+        <a class="btn btn--green" href="<?= $t_wa ?>" target="_blank" rel="noopener" style="margin-top:auto">Enquire on WhatsApp</a>
       </div>
-            <div class="card">
-        <h3>Royal Rajasthan</h3>
-        <p>Jaipur – Pushkar – Udaipur – Jodhpur – Jaisalmer, 6-8 days of forts, lakes and desert.</p>
-      </div>
-            <div class="card">
-        <h3>Custom itineraries</h3>
-        <p>Tell us your dates and interests — we plan the route, stops and stays around you.</p>
-      </div>
-          </div>
+<?php endforeach; ?>
+    </div>
     <div class="content-block">
 <?= page_field('tours', 'body') ?>
     </div>

@@ -3,6 +3,7 @@ require_once __DIR__ . '/config.php';
 $page_title = $page_title ?? SITE_NAME . ' | Taxi & Cab Booking in Jaipur | ' . PHONE_DISPLAY;
 $page_desc = $page_desc ?? 'Book reliable cabs in Jaipur with ' . SITE_NAME . '. Outstation taxis, airport transfers, local rentals and Rajasthan tours — 24x7. WhatsApp ' . PHONE_DISPLAY . '.';
 $canonical = $canonical ?? null;
+$og_image = $og_image ?? null;
 ?><!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -12,12 +13,21 @@ $canonical = $canonical ?? null;
 <meta name="description" content="<?= htmlspecialchars($page_desc) ?>">
 <?php if ($canonical): ?><link rel="canonical" href="https://mkcabservice.com<?= htmlspecialchars($canonical) ?>">
 <?php endif; ?>
+<meta property="og:title" content="<?= htmlspecialchars($page_title) ?>">
+<meta property="og:description" content="<?= htmlspecialchars($page_desc) ?>">
+<meta property="og:type" content="website">
+<?php if ($canonical): ?><meta property="og:url" content="https://mkcabservice.com<?= htmlspecialchars($canonical) ?>">
+<?php endif; ?>
+<?php if ($og_image): ?><meta property="og:image" content="https://mkcabservice.com<?= htmlspecialchars($og_image) ?>">
+<meta name="twitter:card" content="summary_large_image">
+<?php endif; ?>
 <meta name="theme-color" content="#0b3d91">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b3d91'/%3E%3Cpath d='M6 20l2-6a3 3 0 0 1 2.8-2h10.4A3 3 0 0 1 24 14l2 6v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H9v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z' fill='%23ffc107'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
 <link rel="stylesheet" href="/assets/css/styles.css">
+<?= setting('analytics_code') ?>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -68,7 +78,7 @@ $canonical = $canonical ?? null;
     <div class="nav__cta">
       <a class="btn btn--green" href="<?= wa_link() ?>" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.8.8-.8 1.9-.8 2 0 .2.6 2.3 2.5 3.9 2.3 2 3.3 1.7 3.9 1.6.4 0 1.2-.5 1.4-1 .2-.5.2-.9.1-1z"/></svg>
-        WhatsApp Us
+        <?= htmlspecialchars(setting('wa_button_text') ?: 'WhatsApp Us') ?>
       </a>
       <button class="nav__toggle" aria-label="Open menu" aria-controls="primary-nav" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-$page_title = 'MK Cab Service | Taxi & Cab Booking in Jaipur | ' . PHONE_DISPLAY;
-$page_desc = 'Book reliable cabs in Jaipur with MK Cab Service. Outstation taxis, airport transfers, local rentals and Rajasthan tours — 24x7. WhatsApp ' . PHONE_DISPLAY . '.';
+$page_title = page_field('home', 'seo_title');
+$page_desc = page_field('home', 'seo_desc');
 $canonical = '/';
 include __DIR__ . '/includes/header.php';
 ?>
@@ -335,21 +335,13 @@ include __DIR__ . '/includes/header.php';
       <h2><?= page_field('home', 'reviews_title') ?></h2>
     </div>
     <div class="grid grid-3">
+<?php foreach (site_reviews() as $rv): $stars = max(1, min(5, (int)($rv['stars'] ?? 5))); ?>
       <figure class="testimonial">
-        <div class="stars">★★★★★</div>
-        <p>"Booked a sedan for Delhi drop. Car was neat, driver reached before time and the price was exactly what was quoted. Very satisfied with MK Cab Service."</p>
-        <figcaption class="testimonial__who"><span class="testimonial__avatar">R</span><span><b>Ramesh Gupta</b><span>Jaipur → Delhi</span></span></figcaption>
+        <div class="stars"><?= str_repeat('★', $stars) ?><span style="opacity:.3"><?= str_repeat('★', 5 - $stars) ?></span></div>
+        <p>"<?= htmlspecialchars($rv['text']) ?>"</p>
+        <figcaption class="testimonial__who"><span class="testimonial__avatar"><?= htmlspecialchars(function_exists('mb_substr') ? mb_substr($rv['name'], 0, 1) : substr($rv['name'], 0, 1)) ?></span><span><b><?= htmlspecialchars($rv['name']) ?></b><span><?= htmlspecialchars($rv['trip'] ?? '') ?></span></span></figcaption>
       </figure>
-      <figure class="testimonial">
-        <div class="stars">★★★★★</div>
-        <p>"Needed an early morning airport pickup. Driver called the night before to confirm and arrived on the dot. Smooth and safe ride."</p>
-        <figcaption class="testimonial__who"><span class="testimonial__avatar">S</span><span><b>Sunita Agarwal</b><span>Airport Transfer</span></span></figcaption>
-      </figure>
-      <figure class="testimonial">
-        <div class="stars">★★★★★</div>
-        <p>"Took an Innova for a 5-day Rajasthan trip with family. Driver knew all the good stops and never rushed us. Fair rates, no surprises at the end."</p>
-        <figcaption class="testimonial__who"><span class="testimonial__avatar">V</span><span><b>Vikas Jain</b><span>Rajasthan Tour</span></span></figcaption>
-      </figure>
+<?php endforeach; ?>
     </div>
   </div>
 </section>
@@ -362,12 +354,9 @@ include __DIR__ . '/includes/header.php';
       <h2><?= page_field('home', 'faq_title') ?></h2>
     </div>
     <div class="faq">
-      <details open><summary>How do I book a cab with MK Cab Service?</summary><p>WhatsApp us on <?= PHONE_DISPLAY ?>, or fill the booking form on this page. We confirm your booking within minutes, any time of day.</p></details>
-      <details><summary>What are your outstation charges from Jaipur?</summary><p>Every route has a fixed one-way fare — see the rate table above. Only parking is extra. WhatsApp us for a quote for your route — what we quote is what you pay.</p></details>
-      <details><summary>Do you provide Jaipur airport pickup and drop?</summary><p>Yes, we run 24x7 airport transfers with on-time pickup. Share your flight details and we track the arrival so the driver is ready when you land.</p></details>
-      <details><summary>Which payment methods do you accept?</summary><p>Cash, UPI, cards and bank transfer. For most local and airport trips you can pay after the ride.</p></details>
-      <details><summary>Can I book a car for a multi-day tour?</summary><p>Yes. We arrange multi-day Rajasthan tours with experienced drivers — Golden Triangle, Udaipur-Jodhpur circuits or a fully custom plan.</p></details>
-      <details><summary>Are your drivers verified?</summary><p>All our drivers are police-verified, experienced on Rajasthan routes and trained to be courteous and helpful throughout your trip.</p></details>
+<?php foreach (site_faqs() as $i => $fq): ?>
+      <details<?= $i === 0 ? ' open' : '' ?>><summary><?= htmlspecialchars($fq['q']) ?></summary><p><?= nl2br(htmlspecialchars(render_tokens($fq['a']))) ?></p></details>
+<?php endforeach; ?>
     </div>
   </div>
 </section>

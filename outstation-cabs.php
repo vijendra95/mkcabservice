@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-$page_title = 'Outstation Cabs from Jaipur | MK Cab Service | +91 91161 71336';
-$page_desc = 'One-way and round-trip taxis from Jaipur to Delhi, Udaipur, Agra, Jodhpur and every major city in Rajasthan and North India — at fair per-km rates with verified drivers.';
+$page_title = page_field('outstation', 'seo_title');
+$page_desc = page_field('outstation', 'seo_desc');
 $canonical = '/outstation-cabs.php';
 $wa_page = wa_link("Hello MK Cab Service, I'd like to enquire about Outstation Cabs from Jaipur.");
 include __DIR__ . '/includes/header.php';

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-$page_title = 'About Us | MK Cab Service';
-$page_desc = 'MK Cab Service is a Jaipur-based taxi company offering outstation cabs, airport transfers, local rentals and Rajasthan tours with verified drivers and honest fares.';
+$page_title = page_field('about', 'seo_title');
+$page_desc = page_field('about', 'seo_desc');
 $canonical = '/about.php';
 include __DIR__ . '/includes/header.php';
 ?>

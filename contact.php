@@ -15,8 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Location: ' . wa_link($msg));
     exit;
 }
-$page_title = 'Contact Us | MK Cab Service';
-$page_desc = 'Contact MK Cab Service, Jaipur — WhatsApp or send us a message for bookings and quotes. 53, Rd Number 1, Malhotra Nagar, VKI, Jaipur, Rajasthan 302039';
+$page_title = page_field('contact', 'seo_title');
+$page_desc = page_field('contact', 'seo_desc');
 $canonical = '/contact.php';
 include __DIR__ . '/includes/header.php';
 ?>

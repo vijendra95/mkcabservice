@@ -3,3 +3,8 @@ data/admin.json
 data/settings.json
 data/pages/
 data/bookings.json
+data/reviews.json
+data/faqs.json
+data/tours.json
+assets/uploads/*
+!assets/uploads/.htaccess

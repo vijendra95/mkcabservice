@@ -1,7 +1,8 @@
 <?php
-// MK Cab Service — admin panel (bookings, routes, pages, blog, settings).
+// MK Cab Service — admin panel (bookings, routes, tours, pages, blog, reviews, FAQs, media, settings).
 session_start();
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/media-lib.php';
 
 const ADMIN_DEFAULT_PASSWORD = 'mkcab123';
 $DATA_DIR = dirname(__DIR__) . '/data';
@@ -39,6 +40,39 @@ function make_slug_from(string $text, string $suffix = ''): string {
     $s = strtolower($text . $suffix);
     $s = preg_replace('/[^a-z0-9]+/', '-', $s);
     return trim(preg_replace('/-+/', '-', $s), '-');
+}
+
+// Reviews / FAQs / tours share one list store (data/<name>.json).
+function admin_list(string $name): array {
+    global $REVIEWS_DEFAULT, $FAQS_DEFAULT, $TOURS_DEFAULT;
+    $defaults = ['reviews' => $REVIEWS_DEFAULT, 'faqs' => $FAQS_DEFAULT, 'tours' => $TOURS_DEFAULT];
+    return data_list($name, $defaults[$name] ?? []);
+}
+
+function save_list(string $name, array $list): bool {
+    global $DATA_DIR, $DATA_LISTS;
+    $list = array_values($list);
+    if (!save_json($DATA_DIR . '/' . $name . '.json', $list)) return false;
+    $DATA_LISTS[$name] = $list;
+    return true;
+}
+
+/** Insert or replace an item by id; new items go to the end. */
+function upsert_item(array $list, array $item): array {
+    foreach ($list as $i => $it) {
+        if (($it['id'] ?? '') === $item['id']) { $list[$i] = $item; return $list; }
+    }
+    $list[] = $item;
+    return $list;
+}
+
+function find_item(array $list, string $id): ?array {
+    foreach ($list as $it) if (($it['id'] ?? '') === $id) return $it;
+    return null;
+}
+
+function new_id(string $prefix): string {
+    return $prefix . substr(bin2hex(random_bytes(4)), 0, 7);
 }
 
 if (empty($_SESSION['csrf'])) {
@@ -144,14 +178,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $posts = admin_posts();
             $slug = $orig !== '' ? $orig : make_slug_from($title);
+            $img_err = null;
             $entry = [
                 'slug' => $slug,
                 'title' => $title,
                 'date' => trim($_POST['date'] ?? '') ?: date('j M Y'),
                 'excerpt' => trim($_POST['excerpt'] ?? ''),
+                'image' => media_from_form('image', 'image_file', $img_err),
                 'seo_title' => trim($_POST['seo_title'] ?? ''),
                 'seo_desc' => trim($_POST['seo_desc'] ?? ''),
             ];
+            if ($img_err) $err = 'Thumbnail: ' . $img_err;
             $found = false;
             foreach ($posts as $i => $p) {
                 if ($p['slug'] === $slug) { $posts[$i] = $entry; $found = true; break; }
@@ -168,6 +205,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = $WRITE_ERR;
             }
         }
+    } elseif ($action === 'save_tour') {
+        $title = trim($_POST['title'] ?? '');
+        if ($title === '') {
+            $err = 'Package ka title bharna zaroori hai.';
+        } else {
+            $img_err = null;
+            $id = trim($_POST['id'] ?? '') ?: new_id('t');
+            $item = [
+                'id' => $id,
+                'title' => $title,
+                'duration' => trim($_POST['duration'] ?? ''),
+                'price' => trim($_POST['price'] ?? ''),
+                'image' => media_from_form('image', 'image_file', $img_err),
+                'desc' => trim($_POST['desc'] ?? ''),
+                'highlights' => trim(str_replace("\r", '', $_POST['highlights'] ?? '')),
+            ];
+            if (save_list('tours', upsert_item(admin_list('tours'), $item))) {
+                $msg = 'Tour package save ho gaya: ' . $title . ($img_err ? ' (image upload nahi hua: ' . $img_err . ')' : '');
+            } else {
+                $err = $WRITE_ERR;
+            }
+        }
+    } elseif ($action === 'delete_tour') {
+        $id = $_POST['id'] ?? '';
+        if (save_list('tours', array_filter(admin_list('tours'), fn($t) => ($t['id'] ?? '') !== $id))) { $msg = 'Tour package delete ho gaya.'; } else { $err = $WRITE_ERR; }
+    } elseif ($action === 'save_review') {
+        $name = trim($_POST['name'] ?? '');
+        $text = trim($_POST['text'] ?? '');
+        if ($name === '' || $text === '') {
+            $err = 'Customer ka naam aur review dono bharna zaroori hai.';
+        } else {
+            $item = [
+                'id' => trim($_POST['id'] ?? '') ?: new_id('r'),
+                'name' => $name,
+                'trip' => trim($_POST['trip'] ?? ''),
+                'stars' => max(1, min(5, (int)($_POST['stars'] ?? 5))),
+                'text' => $text,
+            ];
+            if (save_list('reviews', upsert_item(admin_list('reviews'), $item))) { $msg = 'Review save ho gaya: ' . $name; } else { $err = $WRITE_ERR; }
+        }
+    } elseif ($action === 'delete_review') {
+        $id = $_POST['id'] ?? '';
+        if (save_list('reviews', array_filter(admin_list('reviews'), fn($r) => ($r['id'] ?? '') !== $id))) { $msg = 'Review delete ho gaya.'; } else { $err = $WRITE_ERR; }
+    } elseif ($action === 'save_faq') {
+        $q = trim($_POST['q'] ?? '');
+        $a = trim($_POST['a'] ?? '');
+        if ($q === '' || $a === '') {
+            $err = 'Question aur answer dono bharna zaroori hai.';
+        } else {
+            $item = ['id' => trim($_POST['id'] ?? '') ?: new_id('f'), 'q' => $q, 'a' => $a];
+            if (save_list('faqs', upsert_item(admin_list('faqs'), $item))) { $msg = 'FAQ save ho gaya.'; } else { $err = $WRITE_ERR; }
+        }
+    } elseif ($action === 'delete_faq') {
+        $id = $_POST['id'] ?? '';
+        if (save_list('faqs', array_filter(admin_list('faqs'), fn($f) => ($f['id'] ?? '') !== $id))) { $msg = 'FAQ delete ho gaya.'; } else { $err = $WRITE_ERR; }
+    } elseif ($action === 'move_item') {
+        $list_name = $_POST['list'] ?? '';
+        $id = $_POST['id'] ?? '';
+        $dir = ($_POST['dir'] ?? '') === 'up' ? -1 : 1;
+        if (in_array($list_name, ['reviews', 'faqs', 'tours'], true)) {
+            $list = admin_list($list_name);
+            foreach ($list as $i => $it) {
+                if (($it['id'] ?? '') === $id) {
+                    $j = $i + $dir;
+                    if (isset($list[$j])) { [$list[$i], $list[$j]] = [$list[$j], $list[$i]]; }
+                    break;
+                }
+            }
+            if (!save_list($list_name, $list)) $err = $WRITE_ERR;
+        }
+    } elseif ($action === 'upload_media') {
+        $done = 0; $errs = [];
+        if (!empty($_FILES['files']['name'][0])) {
+            foreach ($_FILES['files']['name'] as $i => $n) {
+                $res = media_store(['name' => $n, 'type' => $_FILES['files']['type'][$i], 'tmp_name' => $_FILES['files']['tmp_name'][$i], 'error' => $_FILES['files']['error'][$i], 'size' => $_FILES['files']['size'][$i]]);
+                if ($res['ok']) $done++; else $errs[] = $n . ': ' . $res['error'];
+            }
+        }
+        if ($done) $msg = $done . ' image' . ($done > 1 ? 's' : '') . ' upload ho gayi.';
+        if ($errs) $err = implode(' | ', $errs);
+        if (!$done && !$errs) $err = 'Koi image select nahi ki.';
+    } elseif ($action === 'delete_media') {
+        if (media_delete($_POST['name'] ?? '')) { $msg = 'Image delete ho gayi.'; } else { $err = 'Image delete nahi hui.'; }
     } elseif ($action === 'delete_post') {
         $slug = basename($_POST['slug'] ?? '');
         $posts = array_values(array_filter(admin_posts(), fn($p) => $p['slug'] !== $slug));
@@ -191,7 +311,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'rate_tempo' => max(1, (int)($_POST['rate_tempo'] ?? 0)),
             'allowance_default' => max(0, (int)($_POST['allowance_default'] ?? 0)),
             'allowance_tempo' => max(0, (int)($_POST['allowance_tempo'] ?? 0)),
+            'wa_button_text' => trim($_POST['wa_button_text'] ?? '') ?: 'WhatsApp Us',
+            'wa_default_msg' => trim($_POST['wa_default_msg'] ?? ''),
+            'analytics_code' => trim($_POST['analytics_code'] ?? ''),
         ];
+        foreach (['facebook', 'instagram', 'youtube', 'google'] as $sk) {
+            $u = trim($_POST['social_' . $sk] ?? '');
+            if ($u !== '' && !preg_match('#^https?://#i', $u)) $u = 'https://' . $u;
+            $new['social_' . $sk] = $u;
+        }
         if (save_json($SETTINGS_FILE, $new)) {
             $msg = 'Settings save ho gayi. Website pe turant live hain.';
             $SETTINGS = array_merge($SETTINGS, $new);
@@ -212,7 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $tab = $_GET['tab'] ?? 'bookings';
-if (!in_array($tab, ['bookings', 'routes', 'pages', 'blog', 'settings', 'password'], true)) $tab = 'bookings';
+if (!in_array($tab, ['bookings', 'routes', 'tours', 'pages', 'blog', 'reviews', 'faqs', 'media', 'settings', 'password'], true)) $tab = 'bookings';
 
 $bookings = admin_bookings();
 $new_bookings = count(array_filter($bookings, fn($b) => ($b['status'] ?? 'new') === 'new'));
@@ -232,8 +360,43 @@ if ($tab === 'blog' && $edit_slug !== '') {
 }
 $new_post = ($tab === 'blog' && isset($_GET['new']));
 
+$edit_item = null;
+$new_item = isset($_GET['new']);
+if (in_array($tab, ['tours', 'reviews', 'faqs'], true) && $edit_slug !== '') {
+    $edit_item = find_item(admin_list($tab), $edit_slug);
+}
+$show_item_form = $edit_item || ($new_item && in_array($tab, ['tours', 'reviews', 'faqs'], true));
+
 function tab_url(string $t): string { return '/admin/?tab=' . $t; }
+
+/** Image picker field: URL input + upload + "choose from media library" (JS in footer). */
+function image_field(string $name, string $value): void {
+    $v = htmlspecialchars($value);
+    echo '<div class="img-field" data-img-field>'
+       . '<img class="img-field__prev" src="' . ($v !== '' ? $v : 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27/%3E') . '" alt="" data-prev>'
+       . '<div class="img-field__ctl">'
+       . '<input name="' . $name . '" value="' . $v . '" placeholder="/assets/uploads/photo.jpg ya https://..." data-url>'
+       . '<div class="row">'
+       . '<label class="btn btn--ghost btn--sm" style="margin:0;cursor:pointer;color:var(--ink)">Upload new <input type="file" name="' . $name . '_file" accept="image/*" style="display:none" data-file></label>'
+       . '<button type="button" class="btn btn--ghost btn--sm" data-pick>Choose from Media Library</button>'
+       . '<button type="button" class="btn btn--danger btn--sm" data-clear>Remove</button>'
+       . '</div><span class="muted">JPG/PNG/WebP, max 5 MB.</span></div></div>';
+}
+function move_buttons(string $list, string $id, int $i, int $n, string $csrf): void {
+    foreach (['up' => ['↑', $i > 0], 'down' => ['↓', $i < $n - 1]] as $dir => [$arrow, $enabled]) {
+        echo '<form method="post" class="inline-form"><input type="hidden" name="action" value="move_item"><input type="hidden" name="csrf" value="' . $csrf . '">'
+           . '<input type="hidden" name="list" value="' . $list . '"><input type="hidden" name="id" value="' . htmlspecialchars($id) . '"><input type="hidden" name="dir" value="' . $dir . '">'
+           . '<button class="btn btn--ghost btn--sm" type="submit" title="Move ' . $dir . '"' . ($enabled ? '' : ' disabled style="opacity:.35"') . '>' . $arrow . '</button></form> ';
+    }
+}
+
+function short(string $s, int $n): string {
+    if (function_exists('mb_strimwidth')) return mb_strimwidth($s, 0, $n, '…');
+    return strlen($s) > $n ? substr($s, 0, $n - 1) . '…' : $s;
+}
 $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
+$needs_picker = $needs_editor || ($tab === 'tours' && $show_item_form) || $tab === 'media';
+$media_json = json_encode(array_map(fn($m) => ['url' => $m['url'], 'name' => $m['name'], 'deletable' => $m['deletable']], media_files()), JSON_UNESCAPED_SLASHES);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -328,6 +491,32 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
   .enq a { color: var(--orange-dark); font-weight: 700; text-decoration: none; }
   .inline-form { display: inline; }
   select { padding: 6px 10px; border: 1px solid #d4d9e0; border-radius: 8px; font: inherit; font-size: 0.8rem; background: #fff; }
+  select.input { width: 100%; padding: 10px 12px; border-radius: 9px; font-size: 0.92rem; }
+  .section-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); margin: 22px 0 12px; padding-top: 16px; border-top: 1px dashed var(--line); }
+  .thumb { width: 64px; height: 44px; object-fit: cover; border-radius: 7px; background: #eef1f6; display: block; }
+  .thumb--empty { display: flex; align-items: center; justify-content: center; color: #b0b8c6; font-size: 0.7rem; }
+  .img-field { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .img-field__prev { width: 150px; height: 96px; border-radius: 10px; object-fit: cover; background: #eef1f6; border: 1px solid var(--line); flex-shrink: 0; }
+  .img-field__ctl { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
+  .img-field__ctl .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .media-item { background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .media-item img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: #eef1f6; }
+  .media-item__body { padding: 8px 10px; font-size: 0.74rem; color: var(--ink-soft); word-break: break-all; }
+  .media-item__act { display: flex; gap: 5px; margin-top: 6px; }
+  .media-item__act .btn { padding: 4px 8px; font-size: 0.72rem; flex: 1; white-space: nowrap; }
+  .drop { border: 2px dashed #cfd6e0; border-radius: 12px; padding: 22px; text-align: center; color: var(--ink-soft); background: #fafbfd; }
+  .drop input { display: none; }
+  .stars-in { color: #f59e0b; letter-spacing: 2px; }
+  .modal { position: fixed; inset: 0; background: rgba(10,15,40,.55); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+  .modal.open { display: flex; }
+  .modal__box { background: #fff; border-radius: 16px; width: 100%; max-width: 900px; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+  .modal__head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .modal__head h3 { font-size: 1rem; }
+  .modal__body { padding: 18px; overflow: auto; }
+  .modal__body .media-item { cursor: pointer; transition: box-shadow .12s, transform .12s; }
+  .modal__body .media-item:hover { box-shadow: 0 0 0 3px rgba(232,89,12,.35); transform: translateY(-2px); }
+  .jodit-container:not(.jodit_inline) { border-radius: 9px; }
 
   @media (max-width: 860px) {
     .layout { flex-direction: column; }
@@ -364,9 +553,13 @@ $needs_editor = ($edit_page !== '') || $edit_post || $new_post;
 $TAB_TITLES = [
     'bookings' => ['Bookings', 'Website se aayi booking aur contact enquiries'],
     'routes' => ['Routes & Fares', 'One-way routes aur fares manage karein'],
-    'pages' => ['Pages', 'Website ke pages ka content edit karein'],
+    'tours' => ['Tour Packages', 'Tour packages add/edit/delete — tour-packages page pe dikhte hain'],
+    'pages' => ['Pages & SEO', 'Website ke pages ka content aur SEO meta edit karein'],
     'blog' => ['Blog', 'Blog posts likhein aur manage karein'],
-    'settings' => ['Settings', 'Business details aur per-km rates'],
+    'reviews' => ['Reviews', 'Home page ke customer reviews'],
+    'faqs' => ['FAQs', 'Home page ke sawal-jawab'],
+    'media' => ['Media Library', 'Images upload karein — pages, blog aur tours me use karne ke liye'],
+    'settings' => ['Settings', 'Business details, WhatsApp, social links, Google Analytics, rates'],
     'password' => ['Password', 'Admin password badlein'],
 ];
 $ICONS = [
@@ -374,6 +567,10 @@ $ICONS = [
     'routes' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/></svg>',
     'pages' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
     'blog' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    'tours' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    'reviews' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>',
+    'faqs' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>',
+    'media' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
     'settings' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
     'password' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
 ];
@@ -548,8 +745,11 @@ $ICONS = [
           'hero_title' => 'Heading (page ke top ka title)',
           'hero_sub' => 'Sub-heading (heading ke niche ki line)',
           'body' => 'Page content',
+          'seo_title' => 'Meta title (browser tab / Google me dikhne wala title, 50-60 chars)',
+          'seo_desc' => 'Meta description (Google search result ki 1-2 line, 150-160 chars)',
       ];
-      foreach (array_keys($fields) as $fkey):
+      $seo_keys = ['seo_title', 'seo_desc'];
+      foreach (array_diff(array_keys($fields), $seo_keys) as $fkey):
           $flabel = $field_labels[$fkey] ?? $default_labels[$fkey] ?? ucwords(str_replace('_', ' ', $fkey));
           if ($fkey === 'body'): ?>
       <div class="field"><label><?= htmlspecialchars($flabel) ?></label>
@@ -558,6 +758,16 @@ $ICONS = [
       <div class="field"><label><?= htmlspecialchars($flabel) ?></label>
         <input name="field_<?= htmlspecialchars($fkey) ?>" value="<?= htmlspecialchars(page_raw_field($edit_page, $fkey)) ?>"></div>
       <?php endif; endforeach; ?>
+      <div class="section-title">SEO — search engine settings</div>
+      <?php foreach ($seo_keys as $fkey): if (!isset($fields[$fkey])) continue; $cur = page_raw_field($edit_page, $fkey); ?>
+      <div class="field"><label><?= htmlspecialchars($default_labels[$fkey]) ?></label>
+        <?php if ($fkey === 'seo_desc'): ?>
+        <textarea name="field_<?= $fkey ?>" rows="3" data-count><?= htmlspecialchars($cur) ?></textarea>
+        <?php else: ?>
+        <input name="field_<?= $fkey ?>" value="<?= htmlspecialchars($cur) ?>" data-count>
+        <?php endif; ?>
+        <span class="muted count"></span></div>
+      <?php endforeach; ?>
       <div class="actions">
         <button class="btn btn--primary" type="submit">Save page</button>
         <a class="btn btn--ghost" href="<?= tab_url('pages') ?>">Cancel</a>
@@ -573,7 +783,7 @@ $ICONS = [
       <?php foreach ($PAGE_DEFAULTS as $key => $def): ?>
         <tr>
           <td><b><?= htmlspecialchars($def['label']) ?></b></td>
-          <td><?= htmlspecialchars(strip_tags(page_raw_field($key, 'hero_title'))) ?></td>
+          <td><?= htmlspecialchars(html_entity_decode(strip_tags(page_raw_field($key, 'hero_title')), ENT_QUOTES | ENT_HTML5)) ?></td>
           <td style="text-align:right;white-space:nowrap">
             <a class="btn btn--primary btn--sm" href="<?= tab_url('pages') ?>&page=<?= urlencode($key) ?>">Edit</a>
           </td>
@@ -589,7 +799,7 @@ $ICONS = [
 <?php if ($edit_post || $new_post): ?>
   <div class="card">
     <h2><?= $edit_post ? 'Post edit karein' : 'Naya blog post likhein' ?></h2>
-    <form method="post" action="<?= tab_url('blog') ?>">
+    <form method="post" action="<?= tab_url('blog') ?>" enctype="multipart/form-data">
       <input type="hidden" name="action" value="save_post">
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="orig_slug" value="<?= htmlspecialchars($edit_post['slug'] ?? '') ?>">
@@ -601,14 +811,15 @@ $ICONS = [
         <div class="field"><label>Excerpt (blog listing pe chhota intro)</label>
           <input name="excerpt" value="<?= htmlspecialchars($edit_post['excerpt'] ?? '') ?>"></div>
       </div>
+      <div class="field"><label>Thumbnail / featured image (blog list aur post ke top pe dikhti hai)</label>
+        <?php image_field('image', $edit_post['image'] ?? ''); ?></div>
       <div class="field"><label>Content</label>
         <textarea id="body-editor" name="body" rows="18"><?= $edit_post ? htmlspecialchars((string)file_get_contents(dirname(__DIR__) . '/data/posts/' . basename($edit_post['slug']) . '.html')) : '' ?></textarea></div>
-      <div class="grid2">
-        <div class="field"><label>SEO title (optional)</label>
-          <input name="seo_title" value="<?= htmlspecialchars($edit_post['seo_title'] ?? '') ?>"></div>
-        <div class="field"><label>SEO description (optional)</label>
-          <input name="seo_desc" value="<?= htmlspecialchars($edit_post['seo_desc'] ?? '') ?>"></div>
-      </div>
+      <div class="section-title">SEO — search engine settings</div>
+      <div class="field"><label>Meta title (khali = post title | site name)</label>
+        <input name="seo_title" value="<?= htmlspecialchars($edit_post['seo_title'] ?? '') ?>" data-count><span class="muted count"></span></div>
+      <div class="field"><label>Meta description (khali = excerpt)</label>
+        <textarea name="seo_desc" rows="3" data-count><?= htmlspecialchars($edit_post['seo_desc'] ?? '') ?></textarea><span class="muted count"></span></div>
       <div class="actions">
         <button class="btn btn--primary" type="submit"><?= $edit_post ? 'Update post' : 'Publish post' ?></button>
         <a class="btn btn--ghost" href="<?= tab_url('blog') ?>">Cancel</a>
@@ -622,10 +833,11 @@ $ICONS = [
       <a class="btn btn--primary" href="<?= tab_url('blog') ?>&new=1">+ Naya post</a>
     </div>
     <table>
-      <thead><tr><th>Title</th><th>Date</th><th></th></tr></thead>
+      <thead><tr><th></th><th>Title</th><th>Date</th><th></th></tr></thead>
       <tbody>
       <?php foreach (admin_posts() as $p): ?>
         <tr>
+          <td style="width:70px"><?php if (!empty($p['image'])): ?><img class="thumb" src="<?= htmlspecialchars($p['image']) ?>" alt=""><?php else: ?><span class="thumb thumb--empty">No image</span><?php endif; ?></td>
           <td><b><?= htmlspecialchars($p['title']) ?></b><br><span class="muted"><?= htmlspecialchars(blog_url($p['slug'])) ?></span></td>
           <td style="white-space:nowrap"><?= htmlspecialchars($p['date']) ?></td>
           <td style="text-align:right;white-space:nowrap">
@@ -645,6 +857,208 @@ $ICONS = [
   </div>
 <?php endif; ?>
 
+<?php elseif ($tab === 'tours'): ?>
+<?php if ($show_item_form): $t = $edit_item ?? []; ?>
+  <div class="card">
+    <h2><?= $edit_item ? 'Tour package edit karein' : 'Naya tour package' ?></h2>
+    <form method="post" action="<?= tab_url('tours') ?>" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="save_tour">
+      <input type="hidden" name="csrf" value="<?= $csrf ?>">
+      <input type="hidden" name="id" value="<?= htmlspecialchars($t['id'] ?? '') ?>">
+      <div class="field"><label>Package title</label>
+        <input name="title" value="<?= htmlspecialchars($t['title'] ?? '') ?>" required placeholder="e.g. Golden Triangle"></div>
+      <div class="grid2">
+        <div class="field"><label>Duration</label>
+          <input name="duration" value="<?= htmlspecialchars($t['duration'] ?? '') ?>" placeholder="e.g. 3-4 days"></div>
+        <div class="field"><label>Price (optional, jaisa dikhana ho)</label>
+          <input name="price" value="<?= htmlspecialchars($t['price'] ?? '') ?>" placeholder="e.g. From ₹12,500 / On Demand"></div>
+      </div>
+      <div class="field"><label>Short description</label>
+        <textarea name="desc" rows="3"><?= htmlspecialchars($t['desc'] ?? '') ?></textarea></div>
+      <div class="field"><label>Highlights (har line me ek point)</label>
+        <textarea name="highlights" rows="4" placeholder="Amber Fort &amp; Hawa Mahal&#10;Taj Mahal at sunrise"><?= htmlspecialchars($t['highlights'] ?? '') ?></textarea></div>
+      <div class="field"><label>Package image</label>
+        <?php image_field('image', $t['image'] ?? ''); ?></div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit"><?= $edit_item ? 'Update package' : 'Add package' ?></button>
+        <a class="btn btn--ghost" href="<?= tab_url('tours') ?>">Cancel</a>
+      </div>
+    </form>
+  </div>
+<?php else: ?>
+  <div class="card table-scroll">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">Tour packages (<?= count(admin_list('tours')) ?>)</h2>
+      <a class="btn btn--primary" href="<?= tab_url('tours') ?>&new=1">+ Naya package</a>
+    </div>
+    <table>
+      <thead><tr><th></th><th>Package</th><th>Duration</th><th>Price</th><th></th></tr></thead>
+      <tbody>
+      <?php $tours = admin_list('tours'); foreach ($tours as $i => $t): ?>
+        <tr>
+          <td style="width:70px"><?php if (!empty($t['image'])): ?><img class="thumb" src="<?= htmlspecialchars($t['image']) ?>" alt=""><?php else: ?><span class="thumb thumb--empty">No image</span><?php endif; ?></td>
+          <td><b><?= htmlspecialchars($t['title']) ?></b><br><span class="muted"><?= htmlspecialchars(short($t['desc'] ?? '', 80)) ?></span></td>
+          <td style="white-space:nowrap"><?= htmlspecialchars($t['duration'] ?? '') ?></td>
+          <td style="white-space:nowrap"><?= htmlspecialchars($t['price'] ?? '') ?: '<span class="muted">—</span>' ?></td>
+          <td style="text-align:right;white-space:nowrap">
+            <?php move_buttons('tours', $t['id'], $i, count($tours), $csrf); ?>
+            <a class="btn btn--ghost btn--sm" href="<?= tab_url('tours') ?>&edit=<?= urlencode($t['id']) ?>">Edit</a>
+            <form method="post" action="<?= tab_url('tours') ?>" class="inline-form" onsubmit="return confirm('Ye package delete karein?')">
+              <input type="hidden" name="action" value="delete_tour"><input type="hidden" name="csrf" value="<?= $csrf ?>"><input type="hidden" name="id" value="<?= htmlspecialchars($t['id']) ?>">
+              <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:12px">Ye packages <a href="/tour-packages.php" target="_blank">tour-packages.php</a> page pe cards ki tarah dikhte hain. Page ki heading/content "Pages &amp; SEO" tab me edit hota hai.</p>
+  </div>
+<?php endif; ?>
+
+<?php elseif ($tab === 'reviews'): ?>
+<?php if ($show_item_form): $r = $edit_item ?? []; ?>
+  <div class="card" style="max-width:720px">
+    <h2><?= $edit_item ? 'Review edit karein' : 'Naya review' ?></h2>
+    <form method="post" action="<?= tab_url('reviews') ?>">
+      <input type="hidden" name="action" value="save_review">
+      <input type="hidden" name="csrf" value="<?= $csrf ?>">
+      <input type="hidden" name="id" value="<?= htmlspecialchars($r['id'] ?? '') ?>">
+      <div class="grid2">
+        <div class="field"><label>Customer name</label>
+          <input name="name" value="<?= htmlspecialchars($r['name'] ?? '') ?>" required></div>
+        <div class="field"><label>Trip / route (e.g. Jaipur → Delhi)</label>
+          <input name="trip" value="<?= htmlspecialchars($r['trip'] ?? '') ?>"></div>
+      </div>
+      <div class="field"><label>Rating</label>
+        <select name="stars" class="input">
+          <?php for ($s = 5; $s >= 1; $s--): ?><option value="<?= $s ?>" <?= (int)($r['stars'] ?? 5) === $s ? 'selected' : '' ?>><?= str_repeat('★', $s) . str_repeat('☆', 5 - $s) ?> (<?= $s ?>)</option><?php endfor; ?>
+        </select></div>
+      <div class="field"><label>Review text</label>
+        <textarea name="text" rows="4" required><?= htmlspecialchars($r['text'] ?? '') ?></textarea></div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit"><?= $edit_item ? 'Update review' : 'Add review' ?></button>
+        <a class="btn btn--ghost" href="<?= tab_url('reviews') ?>">Cancel</a>
+      </div>
+    </form>
+  </div>
+<?php else: ?>
+  <div class="card table-scroll">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">Customer reviews (<?= count(admin_list('reviews')) ?>)</h2>
+      <a class="btn btn--primary" href="<?= tab_url('reviews') ?>&new=1">+ Naya review</a>
+    </div>
+    <table>
+      <thead><tr><th>Customer</th><th>Rating</th><th>Review</th><th></th></tr></thead>
+      <tbody>
+      <?php $reviews = admin_list('reviews'); foreach ($reviews as $i => $r): ?>
+        <tr>
+          <td style="white-space:nowrap"><b><?= htmlspecialchars($r['name']) ?></b><br><span class="muted"><?= htmlspecialchars($r['trip'] ?? '') ?></span></td>
+          <td class="stars-in" style="white-space:nowrap"><?= str_repeat('★', (int)($r['stars'] ?? 5)) ?></td>
+          <td><?= htmlspecialchars(short($r['text'], 110)) ?></td>
+          <td style="text-align:right;white-space:nowrap">
+            <?php move_buttons('reviews', $r['id'], $i, count($reviews), $csrf); ?>
+            <a class="btn btn--ghost btn--sm" href="<?= tab_url('reviews') ?>&edit=<?= urlencode($r['id']) ?>">Edit</a>
+            <form method="post" action="<?= tab_url('reviews') ?>" class="inline-form" onsubmit="return confirm('Ye review delete karein?')">
+              <input type="hidden" name="action" value="delete_review"><input type="hidden" name="csrf" value="<?= $csrf ?>"><input type="hidden" name="id" value="<?= htmlspecialchars($r['id']) ?>">
+              <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:12px">Home page ke "Rider reviews" section me isi order me dikhte hain. Section ki heading "Pages &amp; SEO → Home page" me hai.</p>
+  </div>
+<?php endif; ?>
+
+<?php elseif ($tab === 'faqs'): ?>
+<?php if ($show_item_form): $f = $edit_item ?? []; ?>
+  <div class="card" style="max-width:720px">
+    <h2><?= $edit_item ? 'FAQ edit karein' : 'Naya FAQ' ?></h2>
+    <form method="post" action="<?= tab_url('faqs') ?>">
+      <input type="hidden" name="action" value="save_faq">
+      <input type="hidden" name="csrf" value="<?= $csrf ?>">
+      <input type="hidden" name="id" value="<?= htmlspecialchars($f['id'] ?? '') ?>">
+      <div class="field"><label>Question</label>
+        <input name="q" value="<?= htmlspecialchars($f['q'] ?? '') ?>" required></div>
+      <div class="field"><label>Answer (shortcode {{PHONE}} use kar sakte ho)</label>
+        <textarea name="a" rows="4" required><?= htmlspecialchars($f['a'] ?? '') ?></textarea></div>
+      <div class="actions">
+        <button class="btn btn--primary" type="submit"><?= $edit_item ? 'Update FAQ' : 'Add FAQ' ?></button>
+        <a class="btn btn--ghost" href="<?= tab_url('faqs') ?>">Cancel</a>
+      </div>
+    </form>
+  </div>
+<?php else: ?>
+  <div class="card table-scroll">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">FAQs (<?= count(admin_list('faqs')) ?>)</h2>
+      <a class="btn btn--primary" href="<?= tab_url('faqs') ?>&new=1">+ Naya FAQ</a>
+    </div>
+    <table>
+      <thead><tr><th>Question</th><th>Answer</th><th></th></tr></thead>
+      <tbody>
+      <?php $faqs = admin_list('faqs'); foreach ($faqs as $i => $f): ?>
+        <tr>
+          <td><b><?= htmlspecialchars($f['q']) ?></b></td>
+          <td><?= htmlspecialchars(short($f['a'], 110)) ?></td>
+          <td style="text-align:right;white-space:nowrap">
+            <?php move_buttons('faqs', $f['id'], $i, count($faqs), $csrf); ?>
+            <a class="btn btn--ghost btn--sm" href="<?= tab_url('faqs') ?>&edit=<?= urlencode($f['id']) ?>">Edit</a>
+            <form method="post" action="<?= tab_url('faqs') ?>" class="inline-form" onsubmit="return confirm('Ye FAQ delete karein?')">
+              <input type="hidden" name="action" value="delete_faq"><input type="hidden" name="csrf" value="<?= $csrf ?>"><input type="hidden" name="id" value="<?= htmlspecialchars($f['id']) ?>">
+              <button class="btn btn--danger btn--sm" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:12px">Home page ke FAQ section me isi order me dikhte hain (pehla wala khula hua).</p>
+  </div>
+<?php endif; ?>
+
+<?php elseif ($tab === 'media'): $media = media_files(); ?>
+  <div class="card">
+    <h2>Images upload karein</h2>
+    <form method="post" action="<?= tab_url('media') ?>" enctype="multipart/form-data" id="media-upload-form">
+      <input type="hidden" name="action" value="upload_media">
+      <input type="hidden" name="csrf" value="<?= $csrf ?>">
+      <label class="drop" for="media-files" style="display:block;cursor:pointer;margin:0">
+        <div style="font-size:1.6rem;margin-bottom:6px">🖼️</div>
+        <b style="color:var(--ink)">Click karke images choose karein</b> — ek saath kai images select kar sakte ho<br>
+        <span class="muted">JPG, PNG, GIF, WebP · max 5 MB har image</span>
+        <input id="media-files" type="file" name="files[]" accept="image/*" multiple onchange="this.form.submit()">
+      </label>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Media library (<?= count($media) ?> images)</h2>
+    <?php if (!$media): ?><p class="muted">Abhi koi image nahi hai — upar se upload karein.</p><?php else: ?>
+    <div class="media-grid">
+      <?php foreach ($media as $m): ?>
+      <div class="media-item">
+        <a href="<?= htmlspecialchars($m['url']) ?>" target="_blank"><img src="<?= htmlspecialchars($m['url']) ?>" alt="" loading="lazy"></a>
+        <div class="media-item__body">
+          <?= htmlspecialchars($m['name']) ?> · <?= round($m['size'] / 1024) ?> KB
+          <div class="media-item__act">
+            <button type="button" class="btn btn--ghost" data-copy="<?= htmlspecialchars($m['url']) ?>">Copy URL</button>
+            <?php if ($m['deletable']): ?>
+            <form method="post" action="<?= tab_url('media') ?>" style="display:contents" onsubmit="return confirm('Ye image delete karein? Jahan use ho rahi hai wahan se hat jayegi.')">
+              <input type="hidden" name="action" value="delete_media"><input type="hidden" name="csrf" value="<?= $csrf ?>"><input type="hidden" name="name" value="<?= htmlspecialchars($m['name']) ?>">
+              <button class="btn btn--danger" type="submit">Delete</button>
+            </form>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <p class="muted" style="margin-top:14px">Ye images page/blog editor me "Media Library" button se, ya blog thumbnail / tour image me "Choose from Media Library" se lag jati hain. Editor me image drag-drop karne par bhi yahin upload hoti hai.</p>
+  </div>
+
 <?php elseif ($tab === 'settings'): ?>
   <div class="card">
     <h2>Site settings</h2>
@@ -663,7 +1077,33 @@ $ICONS = [
       </div>
       <div class="field"><label>Address</label>
         <input name="address" value="<?= htmlspecialchars($SETTINGS['address']) ?>" required></div>
-      <h2 style="margin-top:20px">Per-km rates (fare estimator)</h2>
+
+      <div class="section-title">WhatsApp button</div>
+      <div class="grid2">
+        <div class="field"><label>Button text (header ka green button)</label>
+          <input name="wa_button_text" value="<?= htmlspecialchars($SETTINGS['wa_button_text']) ?>" placeholder="WhatsApp Us"></div>
+        <div class="field"><label>Default message (WhatsApp kholne pe pehle se likha hua)</label>
+          <input name="wa_default_msg" value="<?= htmlspecialchars($SETTINGS['wa_default_msg']) ?>"></div>
+      </div>
+      <p class="muted" style="margin-top:-6px">WhatsApp number upar "WhatsApp number" field me hai — wahi har button/link me use hota hai.</p>
+
+      <div class="section-title">Social media links (footer me icons — khali chhodo to icon nahi dikhega)</div>
+      <div class="grid2">
+        <div class="field"><label>Facebook page URL</label>
+          <input name="social_facebook" value="<?= htmlspecialchars($SETTINGS['social_facebook']) ?>" placeholder="https://facebook.com/..."></div>
+        <div class="field"><label>Instagram URL</label>
+          <input name="social_instagram" value="<?= htmlspecialchars($SETTINGS['social_instagram']) ?>" placeholder="https://instagram.com/..."></div>
+        <div class="field"><label>YouTube URL</label>
+          <input name="social_youtube" value="<?= htmlspecialchars($SETTINGS['social_youtube']) ?>" placeholder="https://youtube.com/@..."></div>
+        <div class="field"><label>Google Business / Maps URL</label>
+          <input name="social_google" value="<?= htmlspecialchars($SETTINGS['social_google']) ?>" placeholder="https://g.page/..."></div>
+      </div>
+
+      <div class="section-title">Google Analytics / tracking code</div>
+      <div class="field"><label>Code paste karein (Google Analytics ka pura &lt;script&gt; tag ya Tag Manager / Search Console verification) — har page ke &lt;head&gt; me lagta hai</label>
+        <textarea name="analytics_code" rows="6" style="font-family:ui-monospace,monospace;font-size:0.82rem" placeholder="<!-- Google tag (gtag.js) -->&#10;<script async src=&quot;https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX&quot;></script>&#10;<script>...</script>"><?= htmlspecialchars($SETTINGS['analytics_code']) ?></textarea></div>
+
+      <div class="section-title">Per-km rates (fare estimator)</div>
       <div class="grid">
         <div class="field"><label>Sedan (₹/km)</label>
           <input type="number" min="1" name="rate_sedan" value="<?= (int)$SETTINGS['rate_sedan'] ?>" required></div>
@@ -697,18 +1137,124 @@ $ICONS = [
   </div>
 <?php endif; ?>
 
-<?php if ($needs_editor): ?>
+<?php if ($needs_picker): ?>
+<div class="modal" id="media-modal" role="dialog" aria-modal="true">
+  <div class="modal__box">
+    <div class="modal__head">
+      <h3>Media Library — image choose karein</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label class="btn btn--primary btn--sm" style="margin:0;cursor:pointer;color:#fff">Upload new <input type="file" accept="image/*" style="display:none" id="modal-upload"></label>
+        <button type="button" class="btn btn--ghost btn--sm" data-close>✕</button>
+      </div>
+    </div>
+    <div class="modal__body"><div class="media-grid" id="modal-grid"></div><p class="muted" id="modal-empty" style="display:none">Abhi koi image nahi hai — "Upload new" se upload karein.</p></div>
+  </div>
+</div>
 <script>
+(function () {
+  var CSRF = <?= json_encode($csrf) ?>;
+  var MEDIA = <?= $media_json ?>;
+  var modal = document.getElementById('media-modal');
+  var grid = document.getElementById('modal-grid');
+  var onPick = null;
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    document.getElementById('modal-empty').style.display = MEDIA.length ? 'none' : '';
+    MEDIA.forEach(function (m) {
+      var d = document.createElement('div');
+      d.className = 'media-item';
+      d.innerHTML = '<img loading="lazy" alt=""><div class="media-item__body"></div>';
+      d.querySelector('img').src = m.url;
+      d.querySelector('.media-item__body').textContent = m.name;
+      d.addEventListener('click', function () { if (onPick) onPick(m.url); closeModal(); });
+      grid.appendChild(d);
+    });
+  }
+  function openPicker(cb) { onPick = cb; renderGrid(); modal.classList.add('open'); }
+  function closeModal() { modal.classList.remove('open'); onPick = null; }
+  modal.addEventListener('click', function (e) { if (e.target === modal || e.target.closest('[data-close]')) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+  function uploadFile(file, done) {
+    var fd = new FormData();
+    fd.append('file', file);
+    fd.append('csrf', CSRF);
+    fetch('/admin/upload.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.success && j.data.urls && j.data.urls.length) {
+          j.data.urls.forEach(function (u) { MEDIA.unshift({ url: u, name: u.split('/').pop(), deletable: true }); });
+          done(null, j.data.urls[0]);
+        } else {
+          done((j.data && j.data.messages && j.data.messages.join(' ')) || 'Upload fail ho gaya.');
+        }
+      })
+      .catch(function () { done('Upload fail ho gaya (network).'); });
+  }
+  document.getElementById('modal-upload').addEventListener('change', function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    uploadFile(f, function (err, url) { if (err) { alert(err); return; } if (onPick) onPick(url); closeModal(); });
+  });
+
+  // Image fields (blog thumbnail, tour image)
+  document.querySelectorAll('[data-img-field]').forEach(function (box) {
+    var url = box.querySelector('[data-url]'), prev = box.querySelector('[data-prev]'), file = box.querySelector('[data-file]');
+    function set(u) { url.value = u; prev.src = u || 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27/%3E'; }
+    url.addEventListener('change', function () { set(url.value.trim()); });
+    box.querySelector('[data-pick]').addEventListener('click', function () { openPicker(set); });
+    box.querySelector('[data-clear]').addEventListener('click', function () { set(''); file.value = ''; });
+    file.addEventListener('change', function () {
+      if (file.files[0]) { prev.src = URL.createObjectURL(file.files[0]); url.value = ''; }
+    });
+  });
+
+  // Copy URL buttons (Media tab)
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var u = location.origin + b.getAttribute('data-copy');
+      (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { b.textContent = 'Copied!'; setTimeout(function () { b.textContent = 'Copy URL'; }, 1400); }, function () { prompt('URL copy karein:', u); });
+    });
+  });
+
+  // Char counters for SEO fields
+  document.querySelectorAll('[data-count]').forEach(function (el) {
+    var out = el.parentElement.querySelector('.count');
+    var max = el.tagName === 'TEXTAREA' ? 160 : 60;
+    function upd() { out.textContent = el.value.length + ' / ' + max + ' chars'; out.style.color = el.value.length > max ? '#b42318' : ''; }
+    el.addEventListener('input', upd); upd();
+  });
+
+  // WordPress-style editor with server-side image upload + media library button
   var ta = document.getElementById('body-editor');
   if (ta && window.Jodit) {
-    Jodit.make('#body-editor', {
+    Jodit.defaultOptions.controls.mediaLibrary = {
+      tooltip: 'Media Library se image lagayein',
+      iconURL: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4c5b6e" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'),
+      exec: function (ed) { openPicker(function (u) { ed.s.insertImage(u, null, 600); }); }
+    };
+    var editor = Jodit.make('#body-editor', {
       height: 420,
       toolbarAdaptive: false,
-      buttons: 'paragraph,bold,italic,underline,|,ul,ol,|,link,image,table,hr,|,align,|,source,fullsize,undo,redo',
-      uploader: { insertImageAsBase64URI: true },
+      buttons: 'paragraph,bold,italic,underline,|,ul,ol,|,link,image,mediaLibrary,table,hr,|,align,|,source,fullsize,undo,redo',
+      uploader: {
+        url: '/admin/upload.php',
+        headers: { 'X-CSRF': CSRF },
+        format: 'json',
+        isSuccess: function (resp) { return resp && resp.success; },
+        getMessage: function (resp) { return resp && resp.data && resp.data.messages ? resp.data.messages.join(' ') : 'Upload fail ho gaya.'; },
+        process: function (resp) { return resp.data; },
+        defaultHandlerSuccess: function (data) {
+          var ed = this.j || this.jodit || editor;
+          (data.files || []).forEach(function (f) { ed.s.insertImage(data.baseurl + f, null, 600); });
+          (data.urls || []).forEach(function (u) { MEDIA.unshift({ url: u, name: u.split('/').pop(), deletable: true }); });
+        }
+      },
       cleanHTML: { fillEmptyParagraph: false }
     });
   }
+})();
 </script>
 <?php endif; ?>
   </main>

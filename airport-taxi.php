@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
-$page_title = 'Jaipur Airport Taxi | MK Cab Service | +91 91161 71336';
-$page_desc = '24x7 pickup and drop for Jaipur International Airport with flight tracking and on-time guarantee — for red-eye departures and late-night landings alike.';
+$page_title = page_field('airport', 'seo_title');
+$page_desc = page_field('airport', 'seo_desc');
 $canonical = '/airport-taxi.php';
 $wa_page = wa_link("Hello MK Cab Service, I'd like to enquire about Jaipur Airport Taxi.");
 include __DIR__ . '/includes/header.php';
